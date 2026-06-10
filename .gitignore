@@ -30,6 +30,20 @@ playground.xcworkspace
 # .swiftpm
 
 .build/
+.swiftpm/
+
+# ── Secrets ──
+Resources/google_credentials.json
+
+# ── Compiled App Bundles ──
+*.app/
+*.app/Contents/**
+
+# ── macOS Finder Metadata ──
+.DS_Store
+
+# ── Runtime Data ──
+Backups/
 
 # CocoaPods
 #
