@@ -12,13 +12,17 @@ struct TDListView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
 
+    // Add-item state
+    @State private var proNewText = ""
+    @State private var perNewText = ""
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 SectionHeader(title: "TD List")
 
                 // ── Description ──
-                Text("Tap an item to check it off. Changes sync to Apple Notes and update today's KPI entry.")
+                Text("Tap to check, pencil to edit, trash to delete. Changes sync to Apple Notes and update today's KPI entry.")
                     .font(.system(size: 12))
                     .foregroundColor(themeManager.colors.textSecondary)
                     .lineSpacing(4)
@@ -77,39 +81,51 @@ struct TDListView: View {
                 } else {
                     // Professional Section
                     let proItems = items.filter { $0.section == .professional }
-                    if !proItems.isEmpty {
-                        SectionBox(title: "Professional (\(proItems.count))") {
-                            LazyVStack(spacing: 0) {
-                                ForEach(Array(proItems.enumerated()), id: \.element.id) { _, item in
-                                    ChecklistItemRow(
-                                        item: item,
-                                        onToggle: { toggleItem(item) }
-                                    )
-                                    if proItems.last?.id != item.id {
-                                        Divider()
-                                            .overlay(themeManager.colors.borderFaint)
-                                    }
+                    SectionBox(title: "Professional (\(proItems.count))") {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(proItems.enumerated()), id: \.element.id) { _, item in
+                                ChecklistItemRow(
+                                    item: item,
+                                    onToggle: { toggleItem(item) },
+                                    onDelete: { deleteItem(item) },
+                                    onEdit: { newText in editItem(item, newText: newText) }
+                                )
+                                if proItems.last?.id != item.id {
+                                    Divider()
+                                        .overlay(themeManager.colors.borderFaint)
                                 }
                             }
+
+                            // Add new Professional item
+                            if !proItems.isEmpty {
+                                Divider().overlay(themeManager.colors.borderFaint)
+                            }
+                            addItemRow(section: .professional, text: $proNewText)
                         }
                     }
 
                     // Personal Section
                     let perItems = items.filter { $0.section == .personal }
-                    if !perItems.isEmpty {
-                        SectionBox(title: "Personal & Academic (\(perItems.count))") {
-                            LazyVStack(spacing: 0) {
-                                ForEach(Array(perItems.enumerated()), id: \.element.id) { _, item in
-                                    ChecklistItemRow(
-                                        item: item,
-                                        onToggle: { toggleItem(item) }
-                                    )
-                                    if perItems.last?.id != item.id {
-                                        Divider()
-                                            .overlay(themeManager.colors.borderFaint)
-                                    }
+                    SectionBox(title: "Personal & Academic (\(perItems.count))") {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(perItems.enumerated()), id: \.element.id) { _, item in
+                                ChecklistItemRow(
+                                    item: item,
+                                    onToggle: { toggleItem(item) },
+                                    onDelete: { deleteItem(item) },
+                                    onEdit: { newText in editItem(item, newText: newText) }
+                                )
+                                if perItems.last?.id != item.id {
+                                    Divider()
+                                        .overlay(themeManager.colors.borderFaint)
                                 }
                             }
+
+                            // Add new Personal item
+                            if !perItems.isEmpty {
+                                Divider().overlay(themeManager.colors.borderFaint)
+                            }
+                            addItemRow(section: .personal, text: $perNewText)
                         }
                     }
                 }
@@ -126,6 +142,55 @@ struct TDListView: View {
         .onAppear {
             loadItems()
         }
+    }
+
+    // MARK: - Add Item Row
+
+    private func addItemRow(section: ChecklistItem.Section, text: Binding<String>) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "plus.circle")
+                .font(.system(size: 13))
+                .foregroundColor(themeManager.colors.accent.opacity(0.6))
+
+            TextField(
+                section == .professional ? "Add professional task..." : "Add personal task...",
+                text: text
+            )
+            .textFieldStyle(.plain)
+            .font(.system(size: 13))
+            .foregroundColor(themeManager.colors.textPrimary)
+            .onSubmit {
+                let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                Task {
+                    await notesService.addItem(section: section, text: trimmed, store: store)
+                    items = notesService.items
+                }
+                text.wrappedValue = ""
+            }
+
+            Button(action: {
+                let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                Task {
+                    await notesService.addItem(section: section, text: trimmed, store: store)
+                    items = notesService.items
+                }
+                text.wrappedValue = ""
+            }) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(
+                        text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? themeManager.colors.textMuted
+                            : themeManager.colors.accent
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 10)
     }
 
     // MARK: - Overview Card
@@ -231,7 +296,6 @@ struct TDListView: View {
     private func toggleItem(_ item: ChecklistItem) {
         Task {
             await notesService.toggleItem(item, store: store)
-            // Reload local state from service
             items = notesService.items
 
             let proDone = items.filter { $0.section == .professional && $0.isChecked }.count
@@ -243,55 +307,130 @@ struct TDListView: View {
             showAlert = true
         }
     }
+
+    private func deleteItem(_ item: ChecklistItem) {
+        Task {
+            await notesService.deleteItem(item, store: store)
+            items = notesService.items
+        }
+    }
+
+    private func editItem(_ item: ChecklistItem, newText: String) {
+        Task {
+            await notesService.updateItemText(item, newText: newText, store: store)
+            items = notesService.items
+        }
+    }
 }
 
-// MARK: - Checklist Item Row
+// MARK: - Checklist Item Row (with edit + delete)
 
 struct ChecklistItemRow: View {
     @EnvironmentObject var themeManager: ThemeManager
     let item: ChecklistItem
     let onToggle: () -> Void
+    var onDelete: (() -> Void)?
+    var onEdit: ((String) -> Void)?
+
+    @State private var isEditing = false
+    @State private var editedText = ""
+    @FocusState private var isFocused: Bool
 
     var body: some View {
-        Button(action: onToggle) {
-            HStack(spacing: 12) {
-                // Custom checkbox
-                ZStack {
-                    RoundedRectangle(cornerRadius: 3)
-                        .stroke(
-                            item.isChecked ? color : themeManager.colors.textMuted,
-                            lineWidth: 1.5
-                        )
-                        .frame(width: 18, height: 18)
-                        .background(
-                            item.isChecked ? color.opacity(0.15) : Color.clear
-                        )
+        HStack(spacing: 12) {
+            // Main row: checkbox + text, entire width tappable for toggle
+            Button(action: onToggle) {
+                HStack(spacing: 12) {
+                    // Checkbox icon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(
+                                item.isChecked ? color : themeManager.colors.textMuted,
+                                lineWidth: 1.5
+                            )
+                            .frame(width: 18, height: 18)
+                            .background(
+                                item.isChecked ? color.opacity(0.15) : Color.clear
+                            )
 
-                    if item.isChecked {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(color)
+                        if item.isChecked {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(color)
+                        }
                     }
+
+                    // Text or Edit Field
+                    if isEditing {
+                        TextField("Item text", text: $editedText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(themeManager.colors.textPrimary)
+                            .focused($isFocused)
+                            .onSubmit { commitEdit() }
+                            .onAppear {
+                                editedText = item.text
+                                isFocused = true
+                            }
+                    } else {
+                        Text(item.text)
+                            .font(.system(size: 13, weight: item.isChecked ? .regular : .medium))
+                            .foregroundColor(
+                                item.isChecked ? themeManager.colors.textMuted : themeManager.colors.textPrimary
+                            )
+                            .strikethrough(item.isChecked, color: themeManager.colors.textMuted)
+                    }
+
+                    Spacer()
                 }
-
-                // Task text
-                Text(item.text)
-                    .font(.system(size: 13, weight: item.isChecked ? .regular : .medium))
-                    .foregroundColor(
-                        item.isChecked ? themeManager.colors.textMuted : themeManager.colors.textPrimary
-                    )
-                    .strikethrough(item.isChecked, color: themeManager.colors.textMuted)
-
-                Spacer()
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 4)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
+            .buttonStyle(.plain)
 
+            // Edit button (pencil)
+            if onEdit != nil {
+                Button(action: {
+                    if isEditing {
+                        commitEdit()
+                    } else {
+                        editedText = item.text
+                        isEditing = true
+                        isFocused = true
+                    }
+                }) {
+                    Image(systemName: isEditing ? "checkmark.circle" : "pencil")
+                        .font(.system(size: 12))
+                        .foregroundColor(isEditing ? color : themeManager.colors.textMuted)
+                }
+                .buttonStyle(.plain)
+                .help(isEditing ? "Save" : "Edit")
+            }
+
+            // Delete button (trash)
+            if onDelete != nil {
+                Button(action: { onDelete?() }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12))
+                        .foregroundColor(themeManager.colors.textMuted.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+                .help("Delete")
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 4)
+    }
     private var color: Color {
         item.section == .professional ? themeManager.colors.accent : themeManager.colors.accentDim
+    }
+
+    private func commitEdit() {
+        let trimmed = editedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != item.text else {
+            isEditing = false
+            return
+        }
+        isEditing = false
+        onEdit?(trimmed)
     }
 }

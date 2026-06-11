@@ -104,6 +104,46 @@ class NotesChecklistService: ObservableObject {
         updateTodayEntry(with: counts, store: store)
     }
 
+    /// Adds a new item to the given section, writes to Notes, updates DataStore.
+    func addItem(section: ChecklistItem.Section, text: String, store: DataStore) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        let newItem = ChecklistItem(section: section, text: trimmed, isChecked: false)
+        items.append(newItem)
+
+        await runWriteScript(with: items)
+
+        let counts = computeCounts(from: items)
+        lastResult = counts
+        updateTodayEntry(with: counts, store: store)
+    }
+
+    /// Removes an item, writes to Notes, updates DataStore.
+    func deleteItem(_ item: ChecklistItem, store: DataStore) async {
+        items.removeAll { $0.id == item.id }
+
+        await runWriteScript(with: items)
+
+        let counts = computeCounts(from: items)
+        lastResult = counts
+        updateTodayEntry(with: counts, store: store)
+    }
+
+    /// Updates the text of an existing item, writes to Notes, updates DataStore.
+    func updateItemText(_ item: ChecklistItem, newText: String, store: DataStore) async {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        let trimmed = newText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        items[index].text = trimmed
+
+        await runWriteScript(with: items)
+
+        let counts = computeCounts(from: items)
+        lastResult = counts
+        updateTodayEntry(with: counts, store: store)
+    }
+
     // MARK: - AppleScript: Read
 
     private func runReadScript() async -> String {
