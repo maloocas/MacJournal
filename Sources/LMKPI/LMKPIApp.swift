@@ -10,9 +10,7 @@ struct LMKPIApp: App {
     @StateObject private var googleAuth = GoogleAuthManager()
     @StateObject private var googleServices: GoogleServicesManager = {
         let manager = GoogleServicesManager()
-        // Register all Google Workspace integrations here.
-        // Future services (Mail, Drive, Tasks) get registered the same way.
-        manager.register(GoogleCalendarService())
+        // Future Google Workspace integrations registered here.
         return manager
     }()
 
@@ -132,6 +130,13 @@ struct ContentView: View {
     @EnvironmentObject var googleServices: GoogleServicesManager
     @State private var selectedTab: Tab = .dashboard
     @State private var entryCount: Int = 0
+    @State private var showSettingsPopup = false
+    @State private var settingsReadingTarget: Int = 50
+    @State private var settingsSocialWeight: Double = 0.25
+    @State private var settingsSleepMin: Double = 7.0
+    @State private var settingsSleepMax: Double = 9.0
+    @State private var settingsSleepPenalty: Double = 6.0
+    @State private var settingsShowAlert = false
 
     enum Tab: String, CaseIterable {
         case dashboard = "Dashboard"
@@ -140,8 +145,6 @@ struct ContentView: View {
         case notes = "Notes"
         case dailyLog = "Daily Log"
         case trends = "Trends"
-        case calendar = "Calendar"
-        case settings = "Settings"
 
         var icon: String {
             switch self {
@@ -151,16 +154,11 @@ struct ContentView: View {
             case .notes: return "arrow.triangle.2.circlepath"
             case .dailyLog: return "square.and.pencil"
             case .trends: return "chart.xyaxis.line"
-            case .calendar: return "calendar"
-            case .settings: return "gearshape"
             }
         }
     }
 
     var body: some View {
-        // Only show Calendar tab if the service is registered
-        let showCalendar = googleServices.service(named: "calendar") != nil
-
         HSplitView {
             // ── Sidebar ──
             VStack(spacing: 0) {
@@ -174,11 +172,8 @@ struct ContentView: View {
                         themeManager.colors.sectionDivider.frame(height: 1)
                     }
 
-                // Navigation items — show Calendar only if registered
-                ForEach(Tab.allCases.filter { tab in
-                    if tab == .calendar { return showCalendar }
-                    return true
-                }, id: \.self) { tab in
+                // Navigation items
+                ForEach(Tab.allCases, id: \.self) { tab in
                     Button(action: {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             selectedTab = tab
@@ -204,16 +199,37 @@ struct ContentView: View {
 
                 Spacer()
 
-                // Animated entry count
-                Text("\(entryCount) entry\(entryCount == 1 ? "" : "s")")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .padding(.bottom, 20)
-                    .onChange(of: store.entries.count) { newValue in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            entryCount = newValue
-                        }
+                // Bottom bar: settings gear + entry count
+                HStack(spacing: 0) {
+                    // Settings gear button (bottom-left)
+                    Button(action: {
+                        showSettingsPopup = true
+                    }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 13))
+                            .foregroundColor(themeManager.colors.textMuted)
+                            .padding(.leading, 18)
+                            .padding(.vertical, 14)
                     }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+
+                    // Animated entry count
+                    Text("\(entryCount) entry\(entryCount == 1 ? "" : "s")")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(themeManager.colors.textMuted)
+                        .padding(.trailing, 18)
+                        .padding(.vertical, 14)
+                        .onChange(of: store.entries.count) { newValue in
+                            withAnimation(.easeInOut(duration: 0.15)) {
+                                entryCount = newValue
+                            }
+                        }
+                }
+                .overlay(alignment: .top) {
+                    themeManager.colors.sectionDivider.frame(height: 1)
+                }
             }
             .frame(minWidth: 170, idealWidth: 190, maxWidth: 210)
             .background(themeManager.colors.sidebarBg)
@@ -245,16 +261,6 @@ struct ContentView: View {
                     .opacity(selectedTab == .trends ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                if showCalendar {
-                    CalendarView()
-                        .opacity(selectedTab == .calendar ? 1 : 0)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-
-                SettingsView()
-                    .opacity(selectedTab == .settings ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
                 // Theme switcher pinned bottom-right
                 ThemeSwitcher()
             }
@@ -269,5 +275,196 @@ struct ContentView: View {
                 await googleServices.configureAll(with: googleAuth)
             }
         }
+        // ── Settings Popup Overlay ──
+        .overlay {
+            if showSettingsPopup {
+                ZStack {
+                    // Dimmed backdrop — tap to close
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showSettingsPopup = false
+                        }
+
+                    // Popup card
+                    VStack(spacing: 0) {
+                        // Title bar
+                        HStack {
+                            Text("Settings")
+                                .font(.system(size: 14, weight: .semibold))
+                                .textCase(.uppercase)
+                                .tracking(2)
+                                .foregroundColor(themeManager.colors.textPrimary)
+
+                            Spacer()
+
+                            Button(action: { showSettingsPopup = false }) {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(themeManager.colors.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .overlay(alignment: .bottom) {
+                            themeManager.colors.sectionDivider.frame(height: 1)
+                        }
+
+                        // ── Settings Form ──
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                // Academic & Behavioral Targets
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("ACADEMIC & BEHAVIORAL TARGETS")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .tracking(2)
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .padding(.horizontal, 20)
+                                        .padding(.top, 16)
+
+                                    HStack(spacing: 16) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Reading Target (Pages)")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            TextField("50", value: $settingsReadingTarget, format: .number)
+                                                .textFieldStyle(.plain)
+                                                .foregroundColor(themeManager.colors.textPrimary)
+                                                .font(.system(size: 13))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(themeManager.colors.card)
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Social Weight (Penalty)")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            TextField("0.25", value: $settingsSocialWeight, format: .number)
+                                                .textFieldStyle(.plain)
+                                                .foregroundColor(themeManager.colors.textPrimary)
+                                                .font(.system(size: 13))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(themeManager.colors.card)
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+
+                                // Sleep Optimization
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("SLEEP OPTIMIZATION (HOURS)")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .tracking(2)
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .padding(.horizontal, 20)
+
+                                    HStack(spacing: 16) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Target Minimum")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            TextField("7", value: $settingsSleepMin, format: .number)
+                                                .textFieldStyle(.plain)
+                                                .foregroundColor(themeManager.colors.textPrimary)
+                                                .font(.system(size: 13))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(themeManager.colors.card)
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Target Maximum")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            TextField("9", value: $settingsSleepMax, format: .number)
+                                                .textFieldStyle(.plain)
+                                                .foregroundColor(themeManager.colors.textPrimary)
+                                                .font(.system(size: 13))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(themeManager.colors.card)
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                                        }
+
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Penalty Threshold (<)")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            TextField("6", value: $settingsSleepPenalty, format: .number)
+                                                .textFieldStyle(.plain)
+                                                .foregroundColor(themeManager.colors.textPrimary)
+                                                .font(.system(size: 13))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(themeManager.colors.card)
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+
+                                // Update button
+                                Button(action: saveSettings) {
+                                    Text("Update Configuration")
+                                        .font(.system(size: 11, weight: .bold))
+                                        .textCase(.uppercase)
+                                        .tracking(3)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(themeManager.colors.accent)
+                                        .foregroundColor(themeManager.colors.background)
+                                }
+                                .buttonStyle(.plain)
+                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.accent, lineWidth: 1))
+                                .padding(.horizontal, 20)
+                                .padding(.top, 4)
+
+                                Spacer().frame(height: 8)
+                            }
+                        }
+                    }
+                    .frame(width: 500, height: 350)
+                    .background(themeManager.colors.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 0)
+                            .stroke(themeManager.colors.border, lineWidth: 1)
+                    )
+                    .onAppear { loadSettings() }
+                    .alert("Configuration Updated", isPresented: $settingsShowAlert) {
+                        Button("OK") {}
+                    }
+                }
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.2), value: showSettingsPopup)
+            }
+        }
+    }
+
+    // MARK: - Settings helpers
+
+    private func loadSettings() {
+        settingsReadingTarget = store.config.readingTarget
+        settingsSocialWeight = store.config.socialWeight
+        settingsSleepMin = store.config.sleepMin
+        settingsSleepMax = store.config.sleepMax
+        settingsSleepPenalty = store.config.sleepPenaltyThreshold
+    }
+
+    private func saveSettings() {
+        let newConfig = AppConfig(
+            readingTarget: max(1, settingsReadingTarget),
+            socialWeight: max(0, settingsSocialWeight),
+            sleepMin: max(0, settingsSleepMin),
+            sleepMax: max(settingsSleepMin, settingsSleepMax),
+            sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin))
+        )
+        store.updateConfig(newConfig)
+        settingsShowAlert = true
     }
 }

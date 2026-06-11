@@ -68,7 +68,7 @@ struct GoogleTokenError: Codable, Error, LocalizedError {
 /// The access_token is kept in-memory only; the refresh_token lives here.
 struct StoredCredentials: Codable {
     let refreshToken: String
-    var scopes: [String]         // e.g. ["https://www.googleapis.com/auth/calendar.readonly"]
+    var scopes: [String]         // e.g. ["https://www.googleapis.com/auth/userinfo.email"]
     var userEmail: String?
     var userName: String?
 }
@@ -87,7 +87,6 @@ struct GoogleUserInfo: Codable {
 /// Named scopes for Google Workspace services.
 /// Add new scopes here when adding new services.
 enum GoogleScope: String, CaseIterable {
-    case calendarReadonly = "https://www.googleapis.com/auth/calendar.readonly"
     case userinfoEmail   = "https://www.googleapis.com/auth/userinfo.email"
     case userinfoProfile = "https://www.googleapis.com/auth/userinfo.profile"
 

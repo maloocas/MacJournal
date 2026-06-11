@@ -55,15 +55,15 @@ struct ThemeColors {
         textPrimary: Color.white,
         textSecondary: Color(white: 0.55),
         textMuted: Color(white: 0.35),
-        accent: Color(red: 0.55, green: 0.75, blue: 0.50),
-        accentDim: Color(white: 0.45),
-        chartLine: Color(white: 0.45),
+        accent: Color(red: 0.35, green: 0.55, blue: 0.82),
+        accentDim: Color(red: 0.22, green: 0.38, blue: 0.62),
+        chartLine: Color(red: 0.22, green: 0.38, blue: 0.62),
         chartFill: Color.white.opacity(0.05),
         chartGrid: Color(white: 0.2),
         sectionDivider: Color(white: 0.2),
         sidebarBg: Color(white: 0.05),
         dotFill: Color.black,
-        dotStroke: Color(white: 0.45)
+        dotStroke: Color(red: 0.22, green: 0.38, blue: 0.62)
     )
 
     // ── Blue Mode (navy blue base + light blue accent + white) ──
