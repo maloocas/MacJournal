@@ -1,94 +1,206 @@
 import SwiftUI
 
-// MARK: - Dashboard Tab
+// MARK: - Dashboard Tab (3-Column Layout)
 
 struct DashboardView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
+    @StateObject private var notesService = NotesChecklistService.shared
 
     var body: some View {
+        GeometryReader { geo in
+            let avail = geo.size.width - 40 // HStack spacing
+            HStack(alignment: .top, spacing: 20) {
+                leftColumn
+                    .frame(width: avail * 0.15)
+
+                middleColumn
+                    .frame(width: avail * 0.48)
+
+                rightColumn
+                    .frame(width: avail * 0.37)
+            }
+        }
+        .padding(20)
+        .background(themeManager.colors.background)
+        .onAppear {
+            Task { await notesService.fetchItems() }
+        }
+    }
+
+    // MARK: - Left Column (KPI Values)
+
+    private var leftColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "KPIs")
+
+            if let latest = store.latestEntry, let kpis = latest.kpis {
+                KpiCard(label: "Tasks Done Index", value: "\(kpis.tdi)%")
+                KpiCard(label: "Efficiency", value: "\(kpis.efficiency)/100")
+                KpiCard(label: "Focus Ratio", value: String(format: "%.1f", kpis.focusRatio))
+                KpiCard(label: "Sleep Logged", value: "\(String(format: "%.1f", latest.sleepHours))h")
+            } else {
+                EmptyKpiCard(label: "Tasks Done Index")
+                EmptyKpiCard(label: "Efficiency")
+                EmptyKpiCard(label: "Focus Ratio")
+                EmptyKpiCard(label: "Sleep Logged")
+            }
+        }
+        .slideUpAppear()
+    }
+
+    // MARK: - Middle Column (TD List)
+
+    private var middleColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "TD List")
+
+            if notesService.items.isEmpty {
+                emptyChecklistPlaceholder
+            } else {
+                checklistContent
+            }
+        }
+        .slideUpAppear()
+    }
+
+    private var emptyChecklistPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "checklist")
+                .font(.system(size: 28))
+                .foregroundColor(themeManager.colors.textMuted)
+            Text("No checklist items.\nAdd some in the TD List tab.")
+                .font(.system(size: 11))
+                .foregroundColor(themeManager.colors.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 40)
+        .background(themeManager.colors.card)
+        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+    }
+
+    private var checklistContent: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                SectionHeader(title: "Analytics Engine")
+            VStack(spacing: 16) {
+                let proItems = notesService.items.filter { $0.section == .professional }
+                let perItems = notesService.items.filter { $0.section == .personal }
 
-                if let latest = store.latestEntry, let kpis = latest.kpis {
-                    // KPI Cards — evenly fill the row
-                    HStack(spacing: 18) {
-                        KpiCard(label: "Tasks Done Index", value: "\(kpis.tdi)%")
-                        KpiCard(label: "Efficiency Score", value: "\(kpis.efficiency)/100")
-                        KpiCard(label: "Focus Ratio", value: String(format: "%.1f", kpis.focusRatio))
-                        KpiCard(label: "Sleep Logged", value: "\(String(format: "%.1f", latest.sleepHours))h")
-                    }
-                    .padding(.horizontal)
-                    .slideUpAppear()
-
-                    // Charts
-                    VStack(spacing: 24) {
-                        HStack(spacing: 20) {
-                            ChartBox(title: "Efficiency Radar") {
-                                RadarChartView(
-                                    values: [
-                                        CGFloat(min(kpis.proExec, 100)),
-                                        CGFloat(min(kpis.perExec, 100)),
-                                        CGFloat(kpis.readingScore),
-                                        CGFloat(min(100, max(0, 100 - Double(latest.socialMins) * store.config.socialWeight * 2))),
-                                        CGFloat(min(kpis.sleepMetric, 100))
-                                    ],
-                                    labels: ["Pro Exec", "Personal Exec", "Reading", "Focus", "Rest"]
+                if !proItems.isEmpty {
+                    SectionBox(title: "Professional (\(proItems.count))") {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(proItems.enumerated()), id: \.element.id) { idx, item in
+                                ChecklistItemRow(
+                                    item: item,
+                                    onToggle: { toggleItem(item) },
+                                    onDelete: { deleteItem(item) },
+                                    onEdit: nil
                                 )
-                                .frame(minHeight: 220)
-                                .padding()
-                            }
-
-                            ChartBox(title: "Task Completion") {
-                                BarChartView(
-                                    proDone: latest.proDone,
-                                    proTotal: latest.proTotal,
-                                    perDone: latest.perDone,
-                                    perTotal: latest.perTotal
-                                )
-                                .frame(minHeight: 220)
-                                .padding()
+                                if idx < proItems.count - 1 {
+                                    Divider().overlay(themeManager.colors.borderFaint)
+                                }
                             }
                         }
+                    }
+                }
 
-                        ChartBox(title: "Dietary Distribution") {
-                            let dietValues = dietDistribution(for: latest)
-                            DonutChartView(values: dietValues)
-                                .frame(minHeight: 220, maxHeight: 260)
-                                .padding()
+                if !perItems.isEmpty {
+                    SectionBox(title: "Personal & Academic (\(perItems.count))") {
+                        LazyVStack(spacing: 0) {
+                            ForEach(Array(perItems.enumerated()), id: \.element.id) { idx, item in
+                                ChecklistItemRow(
+                                    item: item,
+                                    onToggle: { toggleItem(item) },
+                                    onDelete: { deleteItem(item) },
+                                    onEdit: nil
+                                )
+                                if idx < perItems.count - 1 {
+                                    Divider().overlay(themeManager.colors.borderFaint)
+                                }
+                            }
                         }
-                        .frame(maxWidth: 480)
-                        .frame(maxWidth: .infinity)
                     }
-                    .padding(.horizontal)
-                    .slideUpAppear()
-                } else {
-                    // Empty state
-                    HStack(spacing: 14) {
-                        EmptyKpiCard(label: "Tasks Done Index")
-                        EmptyKpiCard(label: "Efficiency Score")
-                        EmptyKpiCard(label: "Focus Ratio")
-                        EmptyKpiCard(label: "Sleep Logged")
-                    }
-                    .padding(.horizontal)
-
-                    VStack(spacing: 24) {
-                        HStack(spacing: 20) {
-                            EmptyChartBox(title: "Efficiency Radar")
-                            EmptyChartBox(title: "Task Completion")
-                        }
-                        EmptyChartBox(title: "Dietary Distribution")
-                            .frame(maxWidth: 480)
-                            .frame(maxWidth: .infinity)
-                    }
-                    .padding(.horizontal)
                 }
             }
-            .padding(.vertical, 16)
         }
-        .background(themeManager.colors.background)
     }
+
+    // MARK: - Right Column (Charts)
+
+    private var rightColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader(title: "Charts")
+
+            if let latest = store.latestEntry, let kpis = latest.kpis {
+                chartContent(latest: latest, kpis: kpis)
+            } else {
+                emptyChartContent
+            }
+        }
+        .slideUpAppear()
+    }
+
+    private func chartContent(latest: Entry, kpis: KPIs) -> some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                ChartBox(title: "Efficiency Radar") {
+                    RadarChartView(
+                        values: [
+                            CGFloat(min(kpis.proExec, 100)),
+                            CGFloat(min(kpis.perExec, 100)),
+                            CGFloat(kpis.readingScore),
+                            CGFloat(min(100, max(0, 100 - Double(latest.socialMins) * store.config.socialWeight * 2))),
+                            CGFloat(min(kpis.sleepMetric, 100))
+                        ],
+                        labels: ["Pro Exec", "Personal Exec", "Reading", "Focus", "Rest"]
+                    )
+                    .padding()
+                }
+
+                ChartBox(title: "Task Completion") {
+                    BarChartView(
+                        proDone: latest.proDone,
+                        proTotal: latest.proTotal,
+                        perDone: latest.perDone,
+                        perTotal: latest.perTotal
+                    )
+                    .padding()
+                }
+
+                ChartBox(title: "Dietary Distribution") {
+                    let dietValues = dietDistribution(for: latest)
+                    DonutChartView(values: dietValues)
+                        .padding()
+                }
+            }
+        }
+    }
+
+    private var emptyChartContent: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                EmptyChartBox(title: "Efficiency Radar")
+                EmptyChartBox(title: "Task Completion")
+                EmptyChartBox(title: "Dietary Distribution")
+            }
+        }
+    }
+
+    // MARK: - Checklist Actions
+
+    private func toggleItem(_ item: ChecklistItem) {
+        Task {
+            await notesService.toggleItem(item, store: store)
+        }
+    }
+
+    private func deleteItem(_ item: ChecklistItem) {
+        Task {
+            await notesService.deleteItem(item, store: store)
+        }
+    }
+
+    // MARK: - Helpers
 
     private func dietDistribution(for entry: Entry) -> [(label: String, value: Double, color: Color)] {
         var counts: [String: Double] = [:]
@@ -206,7 +318,6 @@ struct EmptyChartBox: View {
                 .padding(.horizontal)
 
             EmptyChartSkeleton()
-                .frame(minHeight: 220)
                 .padding()
         }
         .padding(.vertical, 16)

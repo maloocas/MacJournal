@@ -265,7 +265,7 @@ struct ContentView: View {
                 ThemeSwitcher()
             }
         }
-        .frame(minWidth: 800, minHeight: 500)
+        .frame(minWidth: 1000, minHeight: 500)
         .background(themeManager.colors.background)
         .task {
             // Silently try to restore a previous Google session.
