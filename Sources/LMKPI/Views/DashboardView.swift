@@ -53,7 +53,18 @@ struct DashboardView: View {
 
     private var middleColumn: some View {
         VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "TD List")
+            ZStack(alignment: .topTrailing) {
+                SectionHeader(title: "TD List")
+                Button(action: { PopOutWindowManager.shared.toggle() }) {
+                    Image(systemName: "arrow.up.backward.and.arrow.down.forward")
+                        .font(.system(size: 11))
+                        .foregroundColor(themeManager.colors.textMuted)
+                }
+                .buttonStyle(.plain)
+                .help("Pop out TD List")
+                .padding(.trailing, 12)
+                .padding(.top, 12)
+            }
 
             if notesService.items.isEmpty {
                 emptyChecklistPlaceholder

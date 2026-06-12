@@ -6,7 +6,7 @@ import AppKit
 @main
 struct LMKPIApp: App {
     @StateObject private var store = DataStore.shared
-    @StateObject private var themeManager = ThemeManager()
+    @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var googleAuth = GoogleAuthManager()
     @StateObject private var googleServices: GoogleServicesManager = {
         let manager = GoogleServicesManager()

@@ -112,6 +112,8 @@ struct ThemeColors {
 // MARK: - Theme Manager
 
 class ThemeManager: ObservableObject {
+    static let shared = ThemeManager()
+
     @Published var theme: AppTheme = .dark {
         didSet {
             UserDefaults.standard.set(theme.rawValue, forKey: "app_theme")
@@ -134,7 +136,7 @@ class ThemeManager: ObservableObject {
         }
     }
 
-    init() {
+    private init() {
         if let saved = UserDefaults.standard.string(forKey: "app_theme"),
            let loaded = AppTheme(rawValue: saved) {
             self.theme = loaded
