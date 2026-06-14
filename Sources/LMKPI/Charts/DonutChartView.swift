@@ -1,22 +1,43 @@
 import SwiftUI
 
-// MARK: - Donut Chart (Monochrome)
+// MARK: - Donut Chart (labels above the ring)
 
 struct DonutChartView: View {
     @EnvironmentObject var themeManager: ThemeManager
     let values: [(label: String, value: Double, color: Color)]
 
+    // Layout constants
+    private let topPadding: CGFloat = 8
+    private let labelGap: CGFloat = 12
+    private let bottomPadding: CGFloat = 8
+    private let lineHeight: CGFloat = 18
+    private let dotSize: CGFloat = 8
+    private let dotTextGap: CGFloat = 6
+
     private var total: Double { values.reduce(0) { $0 + $1.value } }
 
     var body: some View {
         Canvas { context, size in
-            let cx = size.width / 2
-            let cy = size.height / 2
-            let outerR = min(cx, cy) * 0.85
-            let innerR = outerR * 0.55
-            var startAngle: Double = -90 // start from top
+            let nonZero = values.filter { $0.value > 0 }
+            guard !nonZero.isEmpty else { return }
 
-            for item in values where item.value > 0 {
+            // ── Measure label block ──
+            let maxTextWidth: CGFloat = maxLabelWidth(for: nonZero)
+
+            // ── Layout geometry ──
+            let totalLabelH = CGFloat(nonZero.count) * lineHeight
+            let labelBlockW = dotSize + dotTextGap + maxTextWidth
+            let labelBlockX = (size.width - labelBlockW) / 2     // center label block
+            let donutTop = topPadding + totalLabelH + labelGap
+            let donutAreaH = size.height - donutTop - bottomPadding
+            let outerR = min(size.width, donutAreaH) * 0.40
+            let innerR = outerR * 0.55
+            let cx = size.width / 2
+            let cy = donutTop + donutAreaH / 2
+
+            // ── Donut ring ──
+            var startAngle: Double = -90
+            for item in nonZero {
                 let sweep = (item.value / max(total, 1)) * 360.0
                 let path = arcPath(cx: cx, cy: cy, outerR: outerR, innerR: innerR,
                                    start: startAngle, sweep: sweep)
@@ -25,22 +46,43 @@ struct DonutChartView: View {
                 startAngle += sweep
             }
 
-            // draw legend on the right
-            var legendY: CGFloat = 20
-            for item in values where item.value > 0 {
-                let dot = CGRect(x: size.width - 130, y: legendY, width: 8, height: 8)
-                context.fill(Path(ellipseIn: dot), with: .color(item.color))
+            // ── Labels centered above the donut ──
+            var labelY: CGFloat = topPadding + lineHeight / 2
+            for item in nonZero {
+                // Color dot
+                let dotRect = CGRect(x: labelBlockX,
+                                     y: labelY - dotSize / 2,
+                                     width: dotSize, height: dotSize)
+                context.fill(Path(ellipseIn: dotRect), with: .color(item.color))
 
+                // Label text (left-aligned after the dot; Canvas centers Text so offset by half-width)
+                let textX = labelBlockX + dotSize + dotTextGap
                 let pct = total > 0 ? Int(round(item.value / total * 100)) : 0
-                let text = "\(item.label) (\(pct)%)"
+                let text = "\(item.label) \(pct)%"
+                let textW = CGFloat(text.count) * 5.5  // estimated pixel width
                 context.draw(
-                    Text(text).font(.system(size: 9)).foregroundColor(themeManager.colors.textPrimary.opacity(0.8)),
-                    at: CGPoint(x: size.width - 115, y: legendY + 4)
+                    Text(text)
+                        .font(.system(size: 9))
+                        .foregroundColor(themeManager.colors.textPrimary.opacity(0.8)),
+                    at: CGPoint(x: textX + textW / 2, y: labelY + 3)
                 )
-                legendY += 16
+                labelY += lineHeight
             }
         }
         .aspectRatio(1, contentMode: .fit)
+    }
+
+    // MARK: - Helpers
+
+    /// Estimates pixel width for a 9 pt text string.
+    private func maxLabelWidth(for items: [(label: String, value: Double, color: Color)]) -> CGFloat {
+        let strings = items.map { item -> String in
+            let pct = total > 0 ? Int(round(item.value / total * 100)) : 0
+            return "\(item.label) \(pct)%"
+        }
+        let longest = strings.max(by: { $0.count < $1.count }) ?? ""
+        // ~5.5 px per char at 9 pt system font; floor at sane minimum
+        return max(CGFloat(longest.count) * 5.5, 40)
     }
 
     private func arcPath(cx: CGFloat, cy: CGFloat, outerR: CGFloat, innerR: CGFloat,

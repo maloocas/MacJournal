@@ -179,9 +179,15 @@ struct DashboardView: View {
                 }
 
                 ChartBox(title: "Dietary Distribution") {
-                    let dietValues = dietDistribution(for: latest)
-                    DonutChartView(values: dietValues)
-                        .padding()
+                    let weekEntries = pastWeekEntries
+                    if weekEntries.isEmpty {
+                        EmptyChartSkeleton()
+                            .padding()
+                    } else {
+                        let dietValues = dietDistribution(from: weekEntries)
+                        DonutChartView(values: dietValues)
+                            .padding()
+                    }
                 }
             }
         }
@@ -213,18 +219,31 @@ struct DashboardView: View {
 
     // MARK: - Helpers
 
-    private func dietDistribution(for entry: Entry) -> [(label: String, value: Double, color: Color)] {
+    /// Entries from the previous 7-day window (today excluded).
+    private var pastWeekEntries: [Entry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today) else { return [] }
+        return store.entries.filter { entry in
+            let day = calendar.startOfDay(for: entry.date)
+            return day >= sevenDaysAgo && day < today
+        }
+    }
+
+    private func dietDistribution(from entries: [Entry]) -> [(label: String, value: Double, color: Color)] {
         var counts: [String: Double] = [:]
-        for meal in [entry.breakfast, entry.lunch, entry.dinner] {
-            let key: String
-            switch meal {
-            case .healthy: key = "Healthy"
-            case .fancy: key = "Fancy"
-            case .standard: key = "Standard"
-            case .junk: key = "Junk"
-            case .skipped: key = "Skipped"
+        for entry in entries {
+            for meal in [entry.breakfast, entry.lunch, entry.dinner] {
+                let key: String
+                switch meal {
+                case .healthy: key = "Healthy"
+                case .fancy: key = "Fancy"
+                case .standard: key = "Standard"
+                case .junk: key = "Junk"
+                case .skipped: key = "Skipped"
+                }
+                counts[key, default: 0] += 1
             }
-            counts[key, default: 0] += 1
         }
         let c = themeManager.colors
         let colors: [String: Color] = [
