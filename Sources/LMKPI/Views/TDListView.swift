@@ -27,9 +27,6 @@ struct TDListView: View {
                     .foregroundColor(themeManager.colors.textSecondary)
                     .lineSpacing(4)
 
-                // ── Progress Overview ──
-                overviewCard
-
                 // ── Refresh Button ──
                 HStack {
                     Button(action: loadItems) {
@@ -189,97 +186,8 @@ struct TDListView: View {
             .buttonStyle(.plain)
             .disabled(text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
-        .padding(.horizontal, 4)
         .padding(.vertical, 10)
-    }
-
-    // MARK: - Overview Card
-
-    private var overviewCard: some View {
-        let proDone = items.filter { $0.section == .professional && $0.isChecked }.count
-        let proTotal = items.filter { $0.section == .professional }.count
-        let perDone = items.filter { $0.section == .personal && $0.isChecked }.count
-        let perTotal = items.filter { $0.section == .personal }.count
-
-        return HStack(spacing: 18) {
-            // Professional ring
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(proTotal > 0 ? Double(proDone) / Double(proTotal) : 0))
-                        .stroke(themeManager.colors.accent, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(proDone)/\(proTotal)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Professional")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-
-            // Personal ring
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(perTotal > 0 ? Double(perDone) / Double(perTotal) : 0))
-                        .stroke(themeManager.colors.accentDim, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(perDone)/\(perTotal)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Personal")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-
-            // Overall
-            let totalDone = proDone + perDone
-            let totalAll = proTotal + perTotal
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(totalAll > 0 ? Double(totalDone) / Double(totalAll) : 0))
-                        .stroke(themeManager.colors.accent, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(totalDone)/\(totalAll)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Total")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Actions

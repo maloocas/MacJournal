@@ -144,7 +144,7 @@ struct ContentView: View {
         case journal = "Journal"
         case notes = "Notes"
         case dailyLog = "Daily Log"
-        case trends = "Trends"
+        case stats = "Stats"
 
         var icon: String {
             switch self {
@@ -153,7 +153,7 @@ struct ContentView: View {
             case .journal: return "book.pages"
             case .notes: return "arrow.triangle.2.circlepath"
             case .dailyLog: return "square.and.pencil"
-            case .trends: return "chart.xyaxis.line"
+            case .stats: return "chart.xyaxis.line"
             }
         }
     }
@@ -257,12 +257,9 @@ struct ContentView: View {
                     .opacity(selectedTab == .dailyLog ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                TrendsView()
-                    .opacity(selectedTab == .trends ? 1 : 0)
+                StatsView()
+                    .opacity(selectedTab == .stats ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                // Theme switcher pinned bottom-right
-                ThemeSwitcher()
             }
         }
         .frame(minWidth: 1000, minHeight: 500)
@@ -409,6 +406,58 @@ struct ContentView: View {
                                     .padding(.horizontal, 20)
                                 }
 
+                                // Theme Selection
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("APPEARANCE")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .tracking(2)
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .padding(.horizontal, 20)
+
+                                    HStack(spacing: 12) {
+                                        ForEach(AppTheme.allCases, id: \.self) { theme in
+                                            Button(action: {
+                                                withAnimation(.easeInOut(duration: 0.2)) {
+                                                    themeManager.theme = theme
+                                                }
+                                            }) {
+                                                HStack(spacing: 8) {
+                                                    Circle()
+                                                        .fill(themePreviewColor(theme))
+                                                        .frame(width: 10, height: 10)
+                                                        .overlay(Circle().stroke(
+                                                            themeManager.theme == theme
+                                                                ? themeManager.colors.accent
+                                                                : themeManager.colors.borderFaint,
+                                                            lineWidth: themeManager.theme == theme ? 1.5 : 0.5
+                                                        ))
+                                                    Text(theme.displayName)
+                                                        .font(.system(size: 11, weight: themeManager.theme == theme ? .semibold : .medium))
+                                                        .textCase(.uppercase)
+                                                        .tracking(1)
+                                                        .foregroundColor(themeManager.theme == theme
+                                                            ? themeManager.colors.accent
+                                                            : themeManager.colors.textSecondary)
+                                                }
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 8)
+                                                .background(
+                                                    themeManager.theme == theme
+                                                        ? themeManager.colors.accent.opacity(0.1)
+                                                        : themeManager.colors.card
+                                                )
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(
+                                                    themeManager.theme == theme
+                                                        ? themeManager.colors.accent
+                                                        : themeManager.colors.borderFaint
+                                                ))
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                    }
+                                    .padding(.horizontal, 20)
+                                }
+
                                 // Update button
                                 Button(action: saveSettings) {
                                     Text("Update Configuration")
@@ -429,7 +478,7 @@ struct ContentView: View {
                             }
                         }
                     }
-                    .frame(width: 500, height: 350)
+                    .frame(width: 500, height: 420)
                     .background(themeManager.colors.surface)
                     .overlay(
                         RoundedRectangle(cornerRadius: 0)
@@ -466,5 +515,13 @@ struct ContentView: View {
         )
         store.updateConfig(newConfig)
         settingsShowAlert = true
+    }
+
+    private func themePreviewColor(_ theme: AppTheme) -> Color {
+        switch theme {
+        case .dark: return Color.black
+        case .blue: return Color(red: 0.36, green: 0.61, blue: 0.84)
+        case .light: return Color(red: 0.95, green: 0.95, blue: 0.95)
+        }
     }
 }
