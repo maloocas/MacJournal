@@ -12,13 +12,13 @@ struct DashboardView: View {
             let avail = geo.size.width - 40 // HStack spacing
             HStack(alignment: .top, spacing: 20) {
                 leftColumn
-                    .frame(width: avail * 0.15)
+                    .frame(width: avail * 0.25)
 
                 middleColumn
-                    .frame(width: avail * 0.48)
+                    .frame(width: avail * 0.50)
 
                 rightColumn
-                    .frame(width: avail * 0.37)
+                    .frame(width: avail * 0.25)
             }
         }
         .padding(20)
