@@ -1,21 +1,15 @@
 import SwiftUI
 
-// MARK: - Stats Tab
+// MARK: - Stats Tab (Temporal Trends)
 
 struct StatsView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
-    @StateObject private var notesService = NotesChecklistService.shared
     @State private var showCharts = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                SectionHeader(title: "Today's Progress")
-
-                // ── Progress Overview Card ──
-                progressOverviewCard
-
                 SectionHeader(title: "Temporal Trends")
 
                 if store.chronoEntries.isEmpty {
@@ -91,99 +85,6 @@ struct StatsView: View {
             .padding(.vertical, 16)
         }
         .background(themeManager.colors.background)
-        .onAppear {
-            Task { await notesService.fetchItems() }
-        }
-    }
-
-    // MARK: - Progress Overview Card
-
-    private var progressOverviewCard: some View {
-        let proDone = notesService.items.filter { $0.section == .professional && $0.isChecked }.count
-        let proTotal = notesService.items.filter { $0.section == .professional }.count
-        let perDone = notesService.items.filter { $0.section == .personal && $0.isChecked }.count
-        let perTotal = notesService.items.filter { $0.section == .personal }.count
-
-        return HStack(spacing: 18) {
-            // Professional ring
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(proTotal > 0 ? Double(proDone) / Double(proTotal) : 0))
-                        .stroke(themeManager.colors.accent, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(proDone)/\(proTotal)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Professional")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-
-            // Personal ring
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(perTotal > 0 ? Double(perDone) / Double(perTotal) : 0))
-                        .stroke(themeManager.colors.accentDim, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(perDone)/\(perTotal)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Personal")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-
-            // Overall
-            let totalDone = proDone + perDone
-            let totalAll = proTotal + perTotal
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(totalAll > 0 ? Double(totalDone) / Double(totalAll) : 0))
-                        .stroke(themeManager.colors.accent, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(totalDone)/\(totalAll)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Total")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-        }
-        .padding(18)
-        .frame(maxWidth: .infinity)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
-        .padding(.horizontal)
     }
 }
 

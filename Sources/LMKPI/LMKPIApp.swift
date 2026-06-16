@@ -142,7 +142,6 @@ struct ContentView: View {
         case dashboard = "Dashboard"
         case tdList = "TD List"
         case journal = "Journal"
-        case notes = "Notes"
         case dailyLog = "Daily Log"
         case stats = "Stats"
 
@@ -151,7 +150,6 @@ struct ContentView: View {
             case .dashboard: return "square.grid.2x2"
             case .tdList: return "checklist.unchecked"
             case .journal: return "book.pages"
-            case .notes: return "arrow.triangle.2.circlepath"
             case .dailyLog: return "square.and.pencil"
             case .stats: return "chart.xyaxis.line"
             }
@@ -239,10 +237,6 @@ struct ContentView: View {
             ZStack {
                 DashboardView()
                     .opacity(selectedTab == .dashboard ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                NotesChecklistView()
-                    .opacity(selectedTab == .notes ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 TDListView()
