@@ -217,6 +217,49 @@ class DataStore: ObservableObject {
         return nil
     }
 
+    func exportCSV(savePanel: Bool = true) -> URL? {
+        var csvString = "Date,Sleep Hours,Social Mins,Breakfast,Lunch,Dinner,Professional Tasks Total,Professional Tasks Done,Personal Tasks Total,Personal Tasks Done,Reading Pages,Meditated,TDI,Efficiency,Focus Ratio,Sleep Metric,Reading Score,Professional Exec,Personal Exec\n"
+        
+        for entry in entries {
+            // Escape values if needed, though most fields don't contain commas.
+            let row = [
+                entry.dateString,
+                String(entry.sleepHours),
+                String(entry.socialMins),
+                entry.breakfast.rawValue.replacingOccurrences(of: ",", with: " "),
+                entry.lunch.rawValue.replacingOccurrences(of: ",", with: " "),
+                entry.dinner.rawValue.replacingOccurrences(of: ",", with: " "),
+                String(entry.proTotal),
+                String(entry.proDone),
+                String(entry.perTotal),
+                String(entry.perDone),
+                String(entry.readingPages),
+                String(entry.meditated),
+                String(entry.kpis?.tdi ?? 0),
+                String(entry.kpis?.efficiency ?? 0),
+                String(format: "%.2f", entry.kpis?.focusRatio ?? 0.0),
+                String(format: "%.2f", entry.kpis?.sleepMetric ?? 0.0),
+                String(entry.kpis?.readingScore ?? 0),
+                String(format: "%.2f", entry.kpis?.proExec ?? 0.0),
+                String(format: "%.2f", entry.kpis?.perExec ?? 0.0)
+            ].joined(separator: ",")
+            csvString.append(row + "\n")
+        }
+        
+        guard let data = csvString.data(using: .utf8) else { return nil }
+        
+        if savePanel {
+            let panel = NSSavePanel()
+            panel.title = "Export LMKPI Data as CSV"
+            panel.nameFieldStringValue = "LMKPI_export.csv"
+            panel.allowedContentTypes = [.commaSeparatedText]
+            guard panel.runModal() == .OK, let url = panel.url else { return nil }
+            try? data.write(to: url, options: .atomic)
+            return url
+        }
+        return nil
+    }
+
     /// Imports entries from a legacy JSON export (web app format).
     /// The web app stores entries as raw JSON with fields: id, date, sleepHours, socialMins,
     /// diet (array of strings), proTotal, proDone, perTotal, perDone, readingPages, meditated.

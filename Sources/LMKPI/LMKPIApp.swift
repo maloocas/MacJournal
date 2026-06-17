@@ -452,6 +452,32 @@ struct ContentView: View {
                                     .padding(.horizontal, 20)
                                 }
 
+                                // Data Management
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("DATA MANAGEMENT")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .tracking(2)
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .padding(.horizontal, 20)
+
+                                    Button(action: {
+                                        showSettingsPopup = false
+                                        _ = store.exportCSV(savePanel: true)
+                                    }) {
+                                        Text("Export All Data (CSV)")
+                                            .font(.system(size: 11, weight: .bold))
+                                            .textCase(.uppercase)
+                                            .tracking(3)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(themeManager.colors.card)
+                                            .foregroundColor(themeManager.colors.textPrimary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint, lineWidth: 1))
+                                    .padding(.horizontal, 20)
+                                }
+
                                 // Update button
                                 Button(action: saveSettings) {
                                     Text("Update Configuration")
