@@ -35,7 +35,7 @@ final class PopOutWindowManager {
         let host = NSHostingController(rootView: contentView)
 
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 520),
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 420),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false
@@ -46,10 +46,13 @@ final class PopOutWindowManager {
         p.level = .floating
         p.hidesOnDeactivate = false
         p.isReleasedWhenClosed = false
-        p.minSize = NSSize(width: 280, height: 300)
+        p.minSize = NSSize(width: 100, height: 150)
 
-        // Center on the main screen
-        if let screen = NSScreen.main {
+        // Restore last-used size/position, or center on first open
+        p.setFrameAutosaveName("PopOutTDList")
+        let savedKey = "NSWindow Frame PopOutTDList"
+        if UserDefaults.standard.object(forKey: savedKey) == nil,
+           let screen = NSScreen.main {
             let sr = screen.visibleFrame
             let x = sr.midX - p.frame.width / 2
             let y = sr.midY - p.frame.height / 2
