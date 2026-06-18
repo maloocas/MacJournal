@@ -35,7 +35,7 @@ struct GoogleSignInView: View {
                             .foregroundColor(themeManager.colors.accent)
                     }
 
-                    Text("LM KPI")
+                    Text("MacJournal")
                         .font(.system(size: 32, weight: .black))
                         .textCase(.uppercase)
                         .tracking(6)

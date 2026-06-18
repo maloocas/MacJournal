@@ -18,14 +18,14 @@ class DataStore: ObservableObject {
 
     private var dataURL: URL {
         let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDir = supportDir.appendingPathComponent("LMKPI", isDirectory: true)
+        let appDir = supportDir.appendingPathComponent("MacJournal", isDirectory: true)
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
         return appDir.appendingPathComponent("data.json")
     }
 
     private var backupsDir: URL {
         let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = supportDir.appendingPathComponent("LMKPI/Backups", isDirectory: true)
+        let dir = supportDir.appendingPathComponent("MacJournal/Backups", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
@@ -76,7 +76,7 @@ class DataStore: ObservableObject {
         let df = DateFormatter()
         df.dateFormat = "yyyy-MM-dd_HHmmss"
         let stamp = df.string(from: Date())
-        let backupURL = backupsDir.appendingPathComponent("lmkpi_backup_\(stamp).json")
+        let backupURL = backupsDir.appendingPathComponent("macjournal_backup_\(stamp).json")
         try? data.write(to: backupURL, options: .atomic)
         pruneBackups()
     }
@@ -89,7 +89,7 @@ class DataStore: ObservableObject {
         ) else { return }
 
         let sorted = files
-            .filter { $0.lastPathComponent.hasPrefix("lmkpi_backup_") && $0.pathExtension == "json" }
+            .filter { $0.lastPathComponent.hasPrefix("macjournal_backup_") && $0.pathExtension == "json" }
             .sorted { a, b -> Bool in
                 let da = (try? a.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
                 let db = (try? b.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
@@ -207,8 +207,8 @@ class DataStore: ObservableObject {
 
         if savePanel {
             let panel = NSSavePanel()
-            panel.title = "Export LMKPI Data"
-            panel.nameFieldStringValue = "LMKPI_export.json"
+            panel.title = "Export MacJournal Data"
+            panel.nameFieldStringValue = "MacJournal_export.json"
             panel.allowedContentTypes = [.json]
             guard panel.runModal() == .OK, let url = panel.url else { return nil }
             try? data.write(to: url, options: .atomic)
@@ -250,8 +250,8 @@ class DataStore: ObservableObject {
         
         if savePanel {
             let panel = NSSavePanel()
-            panel.title = "Export LMKPI Data as CSV"
-            panel.nameFieldStringValue = "LMKPI_export.csv"
+            panel.title = "Export MacJournal Data as CSV"
+            panel.nameFieldStringValue = "MacJournal_export.csv"
             panel.allowedContentTypes = [.commaSeparatedText]
             guard panel.runModal() == .OK, let url = panel.url else { return nil }
             try? data.write(to: url, options: .atomic)

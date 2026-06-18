@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Google SDK Configuration
 
-/// Loaded from ~/.lmkpi/google_credentials.json (downloaded from Google Cloud Console).
+/// Loaded from ~/.macjournal/google_credentials.json (downloaded from Google Cloud Console).
 /// This file contains the OAuth 2.0 client ID and secret for a Desktop Application.
 struct GoogleSDKConfig: Codable {
     struct Installed: Codable {

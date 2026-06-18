@@ -18,7 +18,7 @@ enum GoogleAuthError: Error, LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noCredentialsFile:
-            return "No Google credentials file found at ~/AI Projects/LMKPI/Resources/google_credentials.json"
+            return "No Google credentials file found at ~/AI Projects/MacJournal/Resources/google_credentials.json"
         case .invalidCredentialsFile:
             return "Invalid Google credentials file format"
         case .authCancelled:
@@ -69,7 +69,7 @@ final class GoogleAuthManager: ObservableObject {
         if let cached = config { return cached }
         // Path relative to the project directory, inside ~/AI Projects/
         let home = FileManager.default.homeDirectoryForCurrentUser
-        let url = home.appendingPathComponent("AI Projects/LMKPI/Resources/google_credentials.json")
+        let url = home.appendingPathComponent("AI Projects/MacJournal/Resources/google_credentials.json")
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw GoogleAuthError.noCredentialsFile
         }
@@ -88,7 +88,7 @@ final class GoogleAuthManager: ObservableObject {
 
     private var credentialsURL: URL {
         let supportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDir = supportDir.appendingPathComponent("LMKPI", isDirectory: true)
+        let appDir = supportDir.appendingPathComponent("MacJournal", isDirectory: true)
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
         return appDir.appendingPathComponent("google_auth.json")
     }

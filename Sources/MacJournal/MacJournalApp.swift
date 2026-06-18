@@ -4,7 +4,7 @@ import AppKit
 // MARK: - Main App Entry Point
 
 @main
-struct LMKPIApp: App {
+struct MacJournalApp: App {
     @StateObject private var store = DataStore.shared
     @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var googleAuth = GoogleAuthManager()
@@ -56,7 +56,7 @@ struct LMKPIApp: App {
     private func importLegacyData() {
         let panel = NSOpenPanel()
         panel.title = "Import Web App Data"
-        panel.message = "Select the JSON file exported from the LM KPI web app (localStorage data)."
+        panel.message = "Select the JSON file exported from the MacJournal web app (localStorage data)."
         panel.allowedContentTypes = [.json]
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -79,7 +79,7 @@ struct LMKPIApp: App {
 
     private func importStandardData() {
         let panel = NSOpenPanel()
-        panel.title = "Import LMKPI Data"
+        panel.title = "Import MacJournal Data"
         panel.allowedContentTypes = [.json]
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -144,6 +144,7 @@ struct ContentView: View {
         case journal = "Journal"
         case dailyLog = "Daily Log"
         case stats = "Stats"
+        case insights = "Insights"
 
         var icon: String {
             switch self {
@@ -152,6 +153,7 @@ struct ContentView: View {
             case .journal: return "book.pages"
             case .dailyLog: return "square.and.pencil"
             case .stats: return "chart.xyaxis.line"
+            case .insights: return "lightbulb"
             }
         }
     }
@@ -161,7 +163,7 @@ struct ContentView: View {
             // ── Sidebar ──
             VStack(spacing: 0) {
                 // App title
-                Text("LM KPI")
+                Text("MacJournal")
                     .font(.system(size: 22, weight: .black))
                     .textCase(.uppercase)
                     .tracking(4)
@@ -253,6 +255,10 @@ struct ContentView: View {
 
                 StatsView()
                     .opacity(selectedTab == .stats ? 1 : 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                InsightsView()
+                    .opacity(selectedTab == .insights ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }

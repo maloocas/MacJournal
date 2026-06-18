@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "LMKPI",
+    name: "MacJournal",
     platforms: [
         .macOS(.v13)
     ],
     products: [
-        .executable(name: "LMKPI", targets: ["LMKPI"])
+        .executable(name: "MacJournal", targets: ["MacJournal"])
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "LMKPI",
-            path: "Sources/LMKPI"
+            name: "MacJournal",
+            path: "Sources/MacJournal"
         )
     ]
 )
