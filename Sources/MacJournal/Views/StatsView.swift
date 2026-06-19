@@ -26,6 +26,12 @@ struct StatsView: View {
                         EmptyTrendBox(title: "Total Completed Tasks")
                     }
                     .padding(.horizontal)
+
+                    // ── Hourly Checkoff Chart (empty state) ──
+                    if store.config.tdCheckoffTracking {
+                        HourlyCheckoffChart(events: store.tdCheckoffEvents)
+                            .padding(.horizontal)
+                    }
                 } else {
                     LazyVGrid(
                         columns: [GridItem(.flexible())],
@@ -79,6 +85,12 @@ struct StatsView: View {
                         withAnimation(.easeIn(duration: 0.3)) {
                             showCharts = true
                         }
+                    }
+
+                    // ── Hourly Checkoff Chart ──
+                    if store.config.tdCheckoffTracking {
+                        HourlyCheckoffChart(events: store.tdCheckoffEvents)
+                            .padding(.horizontal)
                     }
                 }
             }

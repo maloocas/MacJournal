@@ -102,6 +102,15 @@ class NotesChecklistService: ObservableObject {
         let counts = computeCounts(from: items)
         lastResult = counts
         updateTodayEntry(with: counts, store: store)
+
+        // Record checkoff event if tracking is enabled
+        let newChecked = items[index].isChecked
+        let action: TDCheckoffEvent.Action = newChecked ? .checked : .unchecked
+        store.recordCheckoffEvent(
+            itemText: item.text,
+            section: item.section.rawValue,
+            action: action
+        )
     }
 
     /// Adds a new item to the given section, writes to Notes, updates DataStore.

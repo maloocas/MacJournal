@@ -136,6 +136,7 @@ struct ContentView: View {
     @State private var settingsSleepMin: Double = 7.0
     @State private var settingsSleepMax: Double = 9.0
     @State private var settingsSleepPenalty: Double = 6.0
+    @State private var settingsTDCheckoffTracking = false
     @State private var settingsShowAlert = false
 
     enum Tab: String, CaseIterable {
@@ -458,6 +459,28 @@ struct ContentView: View {
                                     .padding(.horizontal, 20)
                                 }
 
+                                // TD List Tracking
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("TD LIST TRACKING")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .tracking(2)
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .padding(.horizontal, 20)
+
+                                    Toggle(isOn: $settingsTDCheckoffTracking) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Track Check-Off Timestamps")
+                                                .font(.system(size: 12, weight: .semibold))
+                                            Text("Record when items are checked/unchecked on the TD List for future analytics")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(themeManager.colors.textMuted)
+                                        }
+                                    }
+                                    .toggleStyle(.switch)
+                                    .tint(themeManager.colors.accent)
+                                    .padding(.horizontal, 20)
+                                }
+
                                 // Data Management
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("DATA MANAGEMENT")
@@ -529,6 +552,7 @@ struct ContentView: View {
         settingsSleepMin = store.config.sleepMin
         settingsSleepMax = store.config.sleepMax
         settingsSleepPenalty = store.config.sleepPenaltyThreshold
+        settingsTDCheckoffTracking = store.config.tdCheckoffTracking
     }
 
     private func saveSettings() {
@@ -537,7 +561,8 @@ struct ContentView: View {
             socialWeight: max(0, settingsSocialWeight),
             sleepMin: max(0, settingsSleepMin),
             sleepMax: max(settingsSleepMin, settingsSleepMax),
-            sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin))
+            sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin)),
+            tdCheckoffTracking: settingsTDCheckoffTracking
         )
         store.updateConfig(newConfig)
         settingsShowAlert = true

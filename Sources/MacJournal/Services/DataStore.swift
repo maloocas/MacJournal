@@ -8,6 +8,7 @@ class DataStore: ObservableObject {
     @Published var entries: [Entry] = []
     @Published var journalEntries: [JournalEntry] = []
     @Published var config: AppConfig = AppConfig()
+    @Published var tdCheckoffEvents: [TDCheckoffEvent] = []
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -43,6 +44,7 @@ class DataStore: ObservableObject {
         entries = appData.entries
         journalEntries = appData.journalEntries ?? []
         config = appData.config
+        tdCheckoffEvents = appData.tdCheckoffEvents ?? []
         sortEntries()
         sortJournal()
         recalculateAllKPIs()
@@ -59,7 +61,7 @@ class DataStore: ObservableObject {
                 return
             }
         }
-        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries)
+        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents)
         guard let data = try? encoder.encode(appData) else { return }
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
@@ -120,6 +122,20 @@ class DataStore: ObservableObject {
     func updateConfig(_ newConfig: AppConfig) {
         config = newConfig
         recalculateAllKPIs()
+        save()
+    }
+
+    // MARK: - TD Checkoff Tracking
+
+    func recordCheckoffEvent(itemText: String, section: String, action: TDCheckoffEvent.Action) {
+        guard config.tdCheckoffTracking else { return }
+        let event = TDCheckoffEvent(
+            itemText: itemText,
+            section: section,
+            action: action,
+            timestamp: Date()
+        )
+        tdCheckoffEvents.append(event)
         save()
     }
 
