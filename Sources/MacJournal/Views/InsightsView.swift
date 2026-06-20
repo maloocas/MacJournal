@@ -14,8 +14,13 @@ struct InsightsView: View {
             VStack(alignment: .leading, spacing: 28) {
                 SectionHeader(title: "Insights")
 
+                // ── Morning Briefing Section ──
+                if store.config.llmConfig.morningBriefingEnabled {
+                    briefingSection
+                }
+
+                // ── Existing Insight Cards ──
                 if let report, !report.isEmpty {
-                    // Group cards by category
                     let grouped = Dictionary(grouping: report.cards) { $0.category }
 
                     ForEach(InsightCard.Category.allCases, id: \.self) { category in
@@ -33,8 +38,8 @@ struct InsightsView: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 20)
-                } else {
-                    // Empty state
+                } else if store.morningBriefing == nil && !store.config.llmConfig.morningBriefingEnabled {
+                    // Empty state (only show if there's no briefing either)
                     VStack(spacing: 16) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 40))
@@ -60,6 +65,233 @@ struct InsightsView: View {
         }
         .onChange(of: store.entries.count) { _ in
             refresh()
+        }
+    }
+
+    // MARK: - Morning Briefing Section
+
+    @ViewBuilder
+    private var briefingSection: some View {
+        if let briefing = store.morningBriefing, !store.isGeneratingBriefing {
+            // Show cached briefing
+            VStack(alignment: .leading, spacing: 16) {
+                // Section header
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sun.horizon.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(Color.orange)
+                        Text("MORNING BRIEFING")
+                            .font(.system(size: 10, weight: .semibold))
+                            .tracking(2)
+                            .foregroundColor(themeManager.colors.textSecondary)
+                    }
+
+                    Spacer()
+
+                    // Regenerate button
+                    Button(action: { store.generateBriefing() }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.system(size: 10))
+                            Text("Refresh")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(themeManager.colors.accent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(themeManager.colors.accent.opacity(0.08))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(store.isGeneratingBriefing)
+                }
+                .padding(.horizontal)
+
+                // Guidance paragraph
+                if !briefing.guidance.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(briefing.guidance)
+                            .font(.system(size: 13))
+                            .foregroundColor(themeManager.colors.textPrimary)
+                            .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(themeManager.colors.card)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 0)
+                            .stroke(themeManager.colors.borderFaint, lineWidth: 1)
+                    )
+                    .overlay(alignment: .topLeading) {
+                        Rectangle()
+                            .fill(Color.orange.opacity(0.7))
+                            .frame(width: 3, height: 14)
+                            .offset(x: -1.5, y: 16)
+                    }
+                    .padding(.horizontal)
+                }
+
+                // Suggestions
+                if !briefing.suggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TODAY'S FOCUS")
+                            .font(.system(size: 9, weight: .semibold))
+                            .tracking(2)
+                            .foregroundColor(themeManager.colors.textMuted)
+                            .padding(.horizontal)
+
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(Array(briefing.suggestions.enumerated()), id: \.offset) { index, suggestion in
+                                HStack(alignment: .top, spacing: 10) {
+                                    Circle()
+                                        .fill(themeManager.colors.accentDim)
+                                        .frame(width: 5, height: 5)
+                                        .padding(.top, 4)
+
+                                    Text(suggestion)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .lineSpacing(3)
+                                        .fixedSize(horizontal: false, vertical: true)
+
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(index % 2 == 0 ? Color.clear : themeManager.colors.card.opacity(0.3))
+
+                                if index < briefing.suggestions.count - 1 {
+                                    themeManager.colors.sectionDivider
+                                        .frame(height: 1)
+                                        .padding(.leading, 35)
+                                }
+                            }
+                        }
+                        .background(themeManager.colors.card)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 0)
+                                .stroke(themeManager.colors.borderFaint, lineWidth: 1)
+                        )
+                        .padding(.horizontal)
+                    }
+                }
+
+                // Meta line: timestamp + model
+                HStack {
+                    Text("Generated \(briefing.generatedAt, style: .relative) ago")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(themeManager.colors.textMuted)
+                    if !briefing.modelUsed.isEmpty {
+                        Text("· \(briefing.modelUsed)")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(themeManager.colors.textMuted)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal)
+
+                // Divider before cards
+                themeManager.colors.sectionDivider
+                    .frame(height: 1)
+                    .padding(.horizontal)
+            }
+        } else if store.isGeneratingBriefing {
+            // Loading state
+            VStack(spacing: 12) {
+                ProgressView()
+                    .scaleEffect(0.8)
+                    .tint(themeManager.colors.accent)
+                Text("Generating your morning briefing...")
+                    .font(.system(size: 12))
+                    .foregroundColor(themeManager.colors.textMuted)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
+        } else if let error = store.briefingError {
+            // Error state
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color.orange)
+                    Text("MORNING BRIEFING")
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(2)
+                        .foregroundColor(themeManager.colors.textSecondary)
+                }
+                .padding(.horizontal)
+
+                VStack(spacing: 10) {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundColor(themeManager.colors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 12) {
+                        Button(action: {
+                            store.clearBriefingError()
+                            store.generateBriefing()
+                        }) {
+                            Text("Retry")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(themeManager.colors.accent)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: { store.clearBriefingError() }) {
+                            Text("Dismiss")
+                                .font(.system(size: 11))
+                                .foregroundColor(themeManager.colors.textMuted)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity)
+                .background(themeManager.colors.card)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 0)
+                        .stroke(themeManager.colors.borderFaint, lineWidth: 1)
+                )
+                .padding(.horizontal)
+            }
+        } else {
+            // No briefing yet — generate button
+            VStack(spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sun.horizon")
+                        .font(.system(size: 13))
+                        .foregroundColor(themeManager.colors.textMuted)
+                    Text("MORNING BRIEFING")
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(2)
+                        .foregroundColor(themeManager.colors.textSecondary)
+                }
+
+                Text("Get an AI-powered summary of your week with personalized suggestions for today.")
+                    .font(.system(size: 12))
+                    .foregroundColor(themeManager.colors.textMuted)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 280)
+
+                Button(action: { store.generateBriefing() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 11))
+                        Text("Generate Briefing")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(themeManager.colors.background)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(themeManager.colors.accent)
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 24)
         }
     }
 

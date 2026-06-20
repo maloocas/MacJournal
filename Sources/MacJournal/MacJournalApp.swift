@@ -137,6 +137,8 @@ struct ContentView: View {
     @State private var settingsSleepMax: Double = 9.0
     @State private var settingsSleepPenalty: Double = 6.0
     @State private var settingsTDCheckoffTracking = false
+    @State private var settingsMorningBriefingEnabled = false
+    @State private var settingsLLMApiKey = ""
     @State private var settingsShowAlert = false
 
     enum Tab: String, CaseIterable {
@@ -481,6 +483,45 @@ struct ContentView: View {
                                     .padding(.horizontal, 20)
                                 }
 
+                                // LLM Integration
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("LLM INTEGRATION")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .tracking(2)
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                        .padding(.horizontal, 20)
+
+                                    Toggle(isOn: $settingsMorningBriefingEnabled) {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Morning Briefing (DeepSeek)")
+                                                .font(.system(size: 12, weight: .semibold))
+                                            Text("AI-powered daily summary with personalized suggestions")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(themeManager.colors.textMuted)
+                                        }
+                                    }
+                                    .toggleStyle(.switch)
+                                    .tint(themeManager.colors.accent)
+                                    .padding(.horizontal, 20)
+
+                                    if settingsMorningBriefingEnabled {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("DeepSeek API Key")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            SecureField("sk-...", text: $settingsLLMApiKey)
+                                                .textFieldStyle(.plain)
+                                                .foregroundColor(themeManager.colors.textPrimary)
+                                                .font(.system(size: 12))
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(themeManager.colors.card)
+                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                                        }
+                                        .padding(.horizontal, 20)
+                                    }
+                                }
+
                                 // Data Management
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("DATA MANAGEMENT")
@@ -527,7 +568,7 @@ struct ContentView: View {
                             }
                         }
                     }
-                    .frame(width: 500, height: 420)
+                    .frame(width: 500, height: 480)
                     .background(themeManager.colors.surface)
                     .overlay(
                         RoundedRectangle(cornerRadius: 0)
@@ -553,16 +594,22 @@ struct ContentView: View {
         settingsSleepMax = store.config.sleepMax
         settingsSleepPenalty = store.config.sleepPenaltyThreshold
         settingsTDCheckoffTracking = store.config.tdCheckoffTracking
+        settingsMorningBriefingEnabled = store.config.llmConfig.morningBriefingEnabled
+        settingsLLMApiKey = store.config.llmConfig.apiKey
     }
 
     private func saveSettings() {
+        var llmConfig = store.config.llmConfig
+        llmConfig.morningBriefingEnabled = settingsMorningBriefingEnabled
+        llmConfig.apiKey = settingsLLMApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let newConfig = AppConfig(
             readingTarget: max(1, settingsReadingTarget),
             socialWeight: max(0, settingsSocialWeight),
             sleepMin: max(0, settingsSleepMin),
             sleepMax: max(settingsSleepMin, settingsSleepMax),
             sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin)),
-            tdCheckoffTracking: settingsTDCheckoffTracking
+            tdCheckoffTracking: settingsTDCheckoffTracking,
+            llmConfig: llmConfig
         )
         store.updateConfig(newConfig)
         settingsShowAlert = true

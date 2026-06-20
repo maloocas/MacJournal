@@ -34,6 +34,7 @@ playground.xcworkspace
 
 # ── Secrets ──
 Resources/google_credentials.json
+secrets.json
 
 # ── Compiled App Bundles ──
 *.app/
