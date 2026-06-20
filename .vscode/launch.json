@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:MacJournal}",
+            "name": "Debug MacJournal",
+            "target": "MacJournal",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug MacJournal"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:MacJournal}",
+            "name": "Release MacJournal",
+            "target": "MacJournal",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release MacJournal"
+        }
+    ]
+}

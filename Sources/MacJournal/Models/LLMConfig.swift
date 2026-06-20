@@ -18,7 +18,17 @@ enum LLMProvider: String, Codable, CaseIterable {
 
     var defaultModel: String {
         switch self {
-        case .deepseek: return "deepseek-chat"
+        case .deepseek: return "deepseek-v4-flash"
+        }
+    }
+
+    var availableModels: [(id: String, label: String)] {
+        switch self {
+        case .deepseek:
+            return [
+                ("deepseek-v4-flash", "DeepSeek-V4 Flash"),
+                ("deepseek-v4-pro", "DeepSeek-V4 Pro"),
+            ]
         }
     }
 }

@@ -139,6 +139,7 @@ struct ContentView: View {
     @State private var settingsTDCheckoffTracking = false
     @State private var settingsMorningBriefingEnabled = false
     @State private var settingsLLMApiKey = ""
+    @State private var settingsLLMModel = "deepseek-v4-flash"
     @State private var settingsShowAlert = false
 
     enum Tab: String, CaseIterable {
@@ -506,6 +507,20 @@ struct ContentView: View {
 
                                     if settingsMorningBriefingEnabled {
                                         VStack(alignment: .leading, spacing: 4) {
+                                            Text("Model")
+                                                .font(.system(size: 11, weight: .medium))
+                                                .foregroundColor(themeManager.colors.textSecondary)
+                                            Picker("", selection: $settingsLLMModel) {
+                                                ForEach(LLMProvider.deepseek.availableModels, id: \.id) { model in
+                                                    Text(model.label).tag(model.id)
+                                                }
+                                            }
+                                            .pickerStyle(.segmented)
+                                            .labelsHidden()
+                                        }
+                                        .padding(.horizontal, 20)
+
+                                        VStack(alignment: .leading, spacing: 4) {
                                             Text("DeepSeek API Key")
                                                 .font(.system(size: 11, weight: .medium))
                                                 .foregroundColor(themeManager.colors.textSecondary)
@@ -596,12 +611,14 @@ struct ContentView: View {
         settingsTDCheckoffTracking = store.config.tdCheckoffTracking
         settingsMorningBriefingEnabled = store.config.llmConfig.morningBriefingEnabled
         settingsLLMApiKey = store.config.llmConfig.apiKey
+        settingsLLMModel = store.config.llmConfig.model
     }
 
     private func saveSettings() {
         var llmConfig = store.config.llmConfig
         llmConfig.morningBriefingEnabled = settingsMorningBriefingEnabled
         llmConfig.apiKey = settingsLLMApiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        llmConfig.model = settingsLLMModel
         let newConfig = AppConfig(
             readingTarget: max(1, settingsReadingTarget),
             socialWeight: max(0, settingsSocialWeight),
