@@ -10,6 +10,7 @@ MacJournal is a specialized journaling and personal metrics tracking application
     * **Basic KPI Logs:** Quick-entry logging for ad-hoc metrics.
 * **Notes Integration:** Seamlessly incorporate your existing Apple Notes todo lists into your workflow.
 * **Optimized Performance:** Fully optimized for Apple Silicon architecture to ensure instant responsiveness.
+* **(NEW) AI INSIGHTS:** super cool deepseek morning briefings. (star please).
 
 ## Getting Started
 
