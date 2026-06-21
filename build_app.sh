@@ -2,7 +2,7 @@
 # Build the MacJournal macOS native app and create a proper .app bundle
 set -e
 
-PROJECT_DIR="$HOME/AI Projects/MacJournal"
+PROJECT_DIR="$HOME/AI Projects (Coding)/MacJournal"
 APP_NAME="MacJournal DEV BUILD"
 BUILD_DIR="$PROJECT_DIR/.build"
 APP_BUNDLE="$PROJECT_DIR/MacJournal DEV BUILD.app"

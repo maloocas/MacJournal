@@ -47,13 +47,15 @@ struct AppData: Codable {
     var journalEntries: [JournalEntry]?
     var tdCheckoffEvents: [TDCheckoffEvent]?
     var morningBriefing: MorningBriefing?
+    var goals: [Goal]?
 
-    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, morningBriefing: MorningBriefing? = nil) {
+    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil) {
         self.entries = entries
         self.config = config
         self.journalEntries = journalEntries
         self.tdCheckoffEvents = tdCheckoffEvents
         self.morningBriefing = morningBriefing
+        self.goals = goals
     }
 
     init(from decoder: Decoder) throws {
@@ -65,5 +67,7 @@ struct AppData: Codable {
         tdCheckoffEvents = (try? container.decodeIfPresent([TDCheckoffEvent].self, forKey: .tdCheckoffEvents)) ?? nil
         // Silently drop corrupted briefing — never let it sink the entire load
         morningBriefing = (try? container.decodeIfPresent(MorningBriefing.self, forKey: .morningBriefing)) ?? nil
+        // Silently drop corrupted goals — never let them sink the entire load
+        goals = (try? container.decodeIfPresent([Goal].self, forKey: .goals)) ?? nil
     }
 }

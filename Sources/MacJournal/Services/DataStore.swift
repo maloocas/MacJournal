@@ -12,6 +12,7 @@ class DataStore: ObservableObject {
     @Published var morningBriefing: MorningBriefing? = nil
     @Published var isGeneratingBriefing = false
     @Published var briefingError: String? = nil
+    @Published var goals: [Goal] = []
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -49,6 +50,7 @@ class DataStore: ObservableObject {
         config = appData.config
         tdCheckoffEvents = appData.tdCheckoffEvents ?? []
         morningBriefing = appData.morningBriefing
+        goals = appData.goals ?? []
         sortEntries()
         sortJournal()
         recalculateAllKPIs()
@@ -65,7 +67,7 @@ class DataStore: ObservableObject {
                 return
             }
         }
-        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, morningBriefing: morningBriefing)
+        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, morningBriefing: morningBriefing, goals: goals)
         guard let data = try? encoder.encode(appData) else { return }
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
@@ -140,6 +142,30 @@ class DataStore: ObservableObject {
             timestamp: Date()
         )
         tdCheckoffEvents.append(event)
+        save()
+    }
+
+    // MARK: - Goals
+
+    func addGoal(text: String, dueDate: Date? = nil) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let goal = Goal(text: trimmed, dueDate: dueDate)
+        goals.append(goal)
+        save()
+    }
+
+    func updateGoal(id: UUID, text: String, dueDate: Date? = nil) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard let idx = goals.firstIndex(where: { $0.id == id }) else { return }
+        goals[idx].text = trimmed
+        goals[idx].dueDate = dueDate
+        save()
+    }
+
+    func deleteGoal(id: UUID) {
+        goals.removeAll { $0.id == id }
         save()
     }
 

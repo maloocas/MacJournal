@@ -149,6 +149,7 @@ struct ContentView: View {
         case dailyLog = "Daily Log"
         case stats = "Stats"
         case insights = "Insights"
+        case goals = "Goals"
 
         var icon: String {
             switch self {
@@ -158,6 +159,7 @@ struct ContentView: View {
             case .dailyLog: return "square.and.pencil"
             case .stats: return "chart.xyaxis.line"
             case .insights: return "lightbulb"
+            case .goals: return "target"
             }
         }
     }
@@ -167,11 +169,13 @@ struct ContentView: View {
             // ── Sidebar ──
             VStack(spacing: 0) {
                 // App title
-                Text("MacJournal")
+                Text("MJ")
                     .font(.system(size: 22, weight: .black))
                     .textCase(.uppercase)
                     .tracking(4)
-                    .padding(.vertical, 30)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 18)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .overlay(alignment: .bottom) {
                         themeManager.colors.sectionDivider.frame(height: 1)
                     }
@@ -263,6 +267,10 @@ struct ContentView: View {
 
                 InsightsView()
                     .opacity(selectedTab == .insights ? 1 : 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                GoalsView()
+                    .opacity(selectedTab == .goals ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
