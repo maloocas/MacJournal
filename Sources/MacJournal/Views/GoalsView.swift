@@ -55,8 +55,9 @@ struct GoalsView: View {
                     .foregroundColor(themeManager.colors.textPrimary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(themeManager.colors.card)
-                    .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                    .background(themeManager.colors.surface)
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .onSubmit { submitGoal() }
 
                 Button(action: submitGoal) {
@@ -68,7 +69,7 @@ struct GoalsView: View {
                         .padding(.vertical, 10)
                         .background(
                             newGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                ? themeManager.colors.card
+                                ? themeManager.colors.surface
                                 : themeManager.colors.accent
                         )
                         .foregroundColor(
@@ -76,7 +77,8 @@ struct GoalsView: View {
                                 ? themeManager.colors.textMuted
                                 : themeManager.colors.background
                         )
-                        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .disabled(newGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -100,8 +102,9 @@ struct GoalsView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(themeManager.colors.card)
-            .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+            .background(themeManager.colors.surface)
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 
@@ -121,7 +124,7 @@ struct GoalsView: View {
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
                         .background(themeManager.colors.background)
-                        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.accent))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.accent, lineWidth: 1))
 
                     DatePicker("Due Date", selection: $editingDueDate, displayedComponents: .date)
                         .datePickerStyle(.field)
@@ -206,8 +209,9 @@ struct GoalsView: View {
                 .padding(14)
             }
         }
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+.background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Empty State
@@ -224,8 +228,9 @@ struct GoalsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+.background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Actions

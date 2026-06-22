@@ -158,8 +158,9 @@ struct DailyLogView: View {
                                     .frame(minHeight: 100, maxHeight: 200)
                                     .padding(2)
                             }
-                            .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
                             .background(themeManager.colors.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                             HStack {
                                 let count = journalText
@@ -189,13 +190,15 @@ struct DailyLogView: View {
                             .padding(.vertical, 16)
                             .background(themeManager.colors.accent)
                             .foregroundColor(themeManager.colors.background)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
-                    .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.accent, lineWidth: editingExisting ? 2 : 1))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.accent, lineWidth: editingExisting ? 2 : 1))
                 }
                 .padding(18)
-                .background(themeManager.colors.card)
-                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+                .background(themeManager.colors.surface)
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .padding(.horizontal)
                 .opacity(showForm ? 1 : 0)
                 .offset(y: showForm ? 0 : 10)
@@ -287,7 +290,8 @@ struct DailyLogView: View {
                         }
                     }
                     .background(themeManager.colors.surface)
-                    .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .padding(.horizontal)
                 }
             }
@@ -413,7 +417,8 @@ struct FormField<Content: View>: View {
             content
                 .padding(10)
                 .background(themeManager.colors.surface)
-                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
 }
@@ -447,7 +452,11 @@ struct SectionBox<Content: View>: View {
         }
         .padding(18)
         .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

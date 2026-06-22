@@ -118,10 +118,10 @@ struct InsightsView: View {
                     }
                     .padding(16)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(themeManager.colors.card)
+                    .background(themeManager.colors.surface)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 0)
-                            .stroke(themeManager.colors.borderFaint, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(themeManager.colors.border, lineWidth: 1)
                     )
                     .overlay(alignment: .topLeading) {
                         Rectangle()
@@ -129,6 +129,7 @@ struct InsightsView: View {
                             .frame(width: 3, height: 14)
                             .offset(x: -1.5, y: 16)
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .padding(.horizontal)
                 }
 
@@ -168,11 +169,9 @@ struct InsightsView: View {
                                 }
                             }
                         }
-                        .background(themeManager.colors.card)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 0)
-                                .stroke(themeManager.colors.borderFaint, lineWidth: 1)
-                        )
+                .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .padding(.horizontal)
                     }
                 }
@@ -250,11 +249,9 @@ struct InsightsView: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity)
-                .background(themeManager.colors.card)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 0)
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 1)
-                )
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .padding(.horizontal)
             }
         } else {
@@ -389,11 +386,9 @@ struct InsightCardView: View {
             Spacer()
         }
         .padding(16)
-        .background(themeManager.colors.card)
-        .overlay(
-            RoundedRectangle(cornerRadius: 0)
-                .stroke(themeManager.colors.borderFaint, lineWidth: 1)
-        )
+.background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var severityDotColor: Color {

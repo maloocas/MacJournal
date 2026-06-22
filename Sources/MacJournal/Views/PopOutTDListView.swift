@@ -95,8 +95,9 @@ struct PopOutTDListView: View {
             }
         }
         .padding(6)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Row

@@ -58,7 +58,8 @@ struct NotesChecklistView: View {
                 }
                 .padding(14)
                 .background(themeManager.colors.surface)
-                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 // ── Sync Button ──
                 Button(action: performSync) {
@@ -132,9 +133,9 @@ struct NotesChecklistView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(themeManager.colors.card)
+                            .background(themeManager.colors.surface)
                             .foregroundColor(themeManager.colors.textPrimary)
-                            .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.accent))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.accent, lineWidth: 1))
                         }
                         .buttonStyle(.plain)
                         .disabled(autoApply)
@@ -255,7 +256,8 @@ struct ErrorStateView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
         .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -275,7 +277,8 @@ struct EmptyStateView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
         .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -295,7 +298,8 @@ struct InitialStateView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 48)
         .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

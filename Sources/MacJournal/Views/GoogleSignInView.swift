@@ -22,11 +22,11 @@ struct GoogleSignInView: View {
                 VStack(spacing: 24) {
                     // App icon placeholder
                     ZStack {
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 12)
                             .fill(themeManager.colors.accent.opacity(0.08))
                             .frame(width: 80, height: 80)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: 12)
                                     .stroke(themeManager.colors.border, lineWidth: 1)
                             )
 
@@ -76,8 +76,8 @@ struct GoogleSignInView: View {
                         .padding(.horizontal, 32)
                         .padding(.vertical, 14)
                         .background(
-                            RoundedRectangle(cornerRadius: 0)
-                                .fill(themeManager.colors.accent)
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                        .fill(themeManager.colors.accent)
                         )
                     }
                     .buttonStyle(.plain)
@@ -108,9 +108,10 @@ struct GoogleSignInView: View {
                 .padding(40)
                 .background(themeManager.colors.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 0)
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(themeManager.colors.border, lineWidth: 1)
                 )
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 Spacer()
             }

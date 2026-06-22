@@ -10,7 +10,6 @@ struct MacJournalApp: App {
     @StateObject private var googleAuth = GoogleAuthManager()
     @StateObject private var googleServices: GoogleServicesManager = {
         let manager = GoogleServicesManager()
-        // Future Google Workspace integrations registered here.
         return manager
     }()
 
@@ -21,12 +20,10 @@ struct MacJournalApp: App {
                 .environmentObject(themeManager)
                 .environmentObject(googleAuth)
                 .environmentObject(googleServices)
-                .preferredColorScheme(themeManager.effectiveColorScheme)
+                .preferredColorScheme(.dark)
                 .onAppear {
-                    applyTerminalStyle()
-                }
-                .onChange(of: themeManager.theme) { _ in
-                    applyTerminalStyle()
+                    NSApp.appearance = NSAppearance(named: .darkAqua)
+                    NSApp.windows.forEach { $0.backgroundColor = NSColor(white: 0.04, alpha: 1) }
                 }
         }
         .windowStyle(.titleBar)
@@ -50,8 +47,6 @@ struct MacJournalApp: App {
             }
         }
     }
-
-    // MARK: - Import helpers (unchanged)
 
     private func importLegacyData() {
         let panel = NSOpenPanel()
@@ -97,26 +92,6 @@ struct MacJournalApp: App {
             alert.messageText = "Import Failed"
             alert.informativeText = error.localizedDescription
             alert.runModal()
-        }
-    }
-
-    // MARK: - Theme application
-
-    private func applyTerminalStyle() {
-        switch themeManager.theme {
-        case .dark, .blue:
-            NSApp.appearance = NSAppearance(named: .darkAqua)
-        case .light:
-            NSApp.appearance = NSAppearance(named: .aqua)
-        }
-        let bgColor: NSColor
-        switch themeManager.theme {
-        case .dark: bgColor = NSColor.black
-        case .blue: bgColor = NSColor(red: 0.04, green: 0.09, blue: 0.16, alpha: 1)
-        case .light: bgColor = NSColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1)
-        }
-        NSApp.windows.forEach { win in
-            win.backgroundColor = bgColor
         }
     }
 }
@@ -166,9 +141,8 @@ struct ContentView: View {
 
     var body: some View {
         HSplitView {
-            // ── Sidebar ──
+            // --- Sidebar ---
             VStack(spacing: 0) {
-                // App title
                 Text("MJ")
                     .font(.system(size: 22, weight: .black))
                     .textCase(.uppercase)
@@ -180,39 +154,49 @@ struct ContentView: View {
                         themeManager.colors.sectionDivider.frame(height: 1)
                     }
 
-                // Navigation items
-                ForEach(Tab.allCases, id: \.self) { tab in
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedTab = tab
+                // Apple-style sidebar items with continuous rounded corners
+                VStack(spacing: 2) {
+                    ForEach(Tab.allCases, id: \.self) { tab in
+                        let isSelected = selectedTab == tab
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedTab = tab
+                            }
+                        }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: tab.icon)
+                                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                                    .frame(width: 18)
+                                    .foregroundColor(isSelected ? themeManager.colors.accent : themeManager.colors.textSecondary)
+                                Text(tab.rawValue)
+                                    .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+                                    .textCase(.uppercase)
+                                    .tracking(1.5)
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .foregroundColor(isSelected ? themeManager.colors.textPrimary : themeManager.colors.textSecondary)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(isSelected ? themeManager.colors.accent.opacity(0.12) : Color.clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(isSelected ? themeManager.colors.accent.opacity(0.25) : Color.clear, lineWidth: 1)
+                            )
                         }
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: tab.icon)
-                                .font(.system(size: 13))
-                                .frame(width: 18)
-                            Text(tab.rawValue)
-                                .font(.system(size: 13, weight: selectedTab == tab ? .semibold : .regular))
-                                .textCase(.uppercase)
-                                .tracking(1.5)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 14)
-                        .background(selectedTab == tab ? themeManager.colors.accent.opacity(0.12) : Color.clear)
-                        .contentShape(Rectangle())
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
 
                 Spacer()
 
-                // Bottom bar: settings gear + entry count
                 HStack(spacing: 0) {
-                    // Settings gear button (bottom-left)
-                    Button(action: {
-                        showSettingsPopup = true
-                    }) {
+                    Button(action: { showSettingsPopup = true }) {
                         Image(systemName: "gearshape")
                             .font(.system(size: 13))
                             .foregroundColor(themeManager.colors.textMuted)
@@ -223,7 +207,6 @@ struct ContentView: View {
 
                     Spacer()
 
-                    // Animated entry count
                     Text("\(entryCount) entry\(entryCount == 1 ? "" : "s")")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(themeManager.colors.textMuted)
@@ -243,7 +226,7 @@ struct ContentView: View {
             .background(themeManager.colors.sidebarBg)
             .onAppear { entryCount = store.entries.count }
 
-            // ── Tab Content ──
+            // --- Tab Content ---
             ZStack {
                 DashboardView()
                     .opacity(selectedTab == .dashboard ? 1 : 0)
@@ -277,338 +260,252 @@ struct ContentView: View {
         .frame(minWidth: 1000, minHeight: 500)
         .background(themeManager.colors.background)
         .task {
-            // Silently try to restore a previous Google session.
-            // No gate — the app is always usable without auth.
             await googleAuth.restoreSessionIfAvailable()
             if googleAuth.isAuthenticated {
                 await googleServices.configureAll(with: googleAuth)
             }
         }
-        // ── Settings Popup Overlay ──
         .overlay {
             if showSettingsPopup {
-                ZStack {
-                    // Dimmed backdrop — tap to close
-                    Color.black.opacity(0.4)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            showSettingsPopup = false
-                        }
-
-                    // Popup card
-                    VStack(spacing: 0) {
-                        // Title bar
-                        HStack {
-                            Text("Settings")
-                                .font(.system(size: 14, weight: .semibold))
-                                .textCase(.uppercase)
-                                .tracking(2)
-                                .foregroundColor(themeManager.colors.textPrimary)
-
-                            Spacer()
-
-                            Button(action: { showSettingsPopup = false }) {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 12, weight: .medium))
-                                    .foregroundColor(themeManager.colors.textMuted)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
-                        .overlay(alignment: .bottom) {
-                            themeManager.colors.sectionDivider.frame(height: 1)
-                        }
-
-                        // ── Settings Form ──
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 16) {
-                                // Academic & Behavioral Targets
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("ACADEMIC & BEHAVIORAL TARGETS")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(2)
-                                        .foregroundColor(themeManager.colors.textSecondary)
-                                        .padding(.horizontal, 20)
-                                        .padding(.top, 16)
-
-                                    HStack(spacing: 16) {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Reading Target (Pages)")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            TextField("50", value: $settingsReadingTarget, format: .number)
-                                                .textFieldStyle(.plain)
-                                                .foregroundColor(themeManager.colors.textPrimary)
-                                                .font(.system(size: 13))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(themeManager.colors.card)
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
-                                        }
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Social Weight (Penalty)")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            TextField("0.25", value: $settingsSocialWeight, format: .number)
-                                                .textFieldStyle(.plain)
-                                                .foregroundColor(themeManager.colors.textPrimary)
-                                                .font(.system(size: 13))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(themeManager.colors.card)
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
-
-                                // Sleep Optimization
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("SLEEP OPTIMIZATION (HOURS)")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(2)
-                                        .foregroundColor(themeManager.colors.textSecondary)
-                                        .padding(.horizontal, 20)
-
-                                    HStack(spacing: 16) {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Target Minimum")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            TextField("7", value: $settingsSleepMin, format: .number)
-                                                .textFieldStyle(.plain)
-                                                .foregroundColor(themeManager.colors.textPrimary)
-                                                .font(.system(size: 13))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(themeManager.colors.card)
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
-                                        }
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Target Maximum")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            TextField("9", value: $settingsSleepMax, format: .number)
-                                                .textFieldStyle(.plain)
-                                                .foregroundColor(themeManager.colors.textPrimary)
-                                                .font(.system(size: 13))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(themeManager.colors.card)
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
-                                        }
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Penalty Threshold (<)")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            TextField("6", value: $settingsSleepPenalty, format: .number)
-                                                .textFieldStyle(.plain)
-                                                .foregroundColor(themeManager.colors.textPrimary)
-                                                .font(.system(size: 13))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(themeManager.colors.card)
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
-
-                                // Theme Selection
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("APPEARANCE")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(2)
-                                        .foregroundColor(themeManager.colors.textSecondary)
-                                        .padding(.horizontal, 20)
-
-                                    HStack(spacing: 12) {
-                                        ForEach(AppTheme.allCases, id: \.self) { theme in
-                                            Button(action: {
-                                                withAnimation(.easeInOut(duration: 0.2)) {
-                                                    themeManager.theme = theme
-                                                }
-                                            }) {
-                                                HStack(spacing: 8) {
-                                                    Circle()
-                                                        .fill(themePreviewColor(theme))
-                                                        .frame(width: 10, height: 10)
-                                                        .overlay(Circle().stroke(
-                                                            themeManager.theme == theme
-                                                                ? themeManager.colors.accent
-                                                                : themeManager.colors.borderFaint,
-                                                            lineWidth: themeManager.theme == theme ? 1.5 : 0.5
-                                                        ))
-                                                    Text(theme.displayName)
-                                                        .font(.system(size: 11, weight: themeManager.theme == theme ? .semibold : .medium))
-                                                        .textCase(.uppercase)
-                                                        .tracking(1)
-                                                        .foregroundColor(themeManager.theme == theme
-                                                            ? themeManager.colors.accent
-                                                            : themeManager.colors.textSecondary)
-                                                }
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 8)
-                                                .background(
-                                                    themeManager.theme == theme
-                                                        ? themeManager.colors.accent.opacity(0.1)
-                                                        : themeManager.colors.card
-                                                )
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(
-                                                    themeManager.theme == theme
-                                                        ? themeManager.colors.accent
-                                                        : themeManager.colors.borderFaint
-                                                ))
-                                            }
-                                            .buttonStyle(.plain)
-                                        }
-                                    }
-                                    .padding(.horizontal, 20)
-                                }
-
-                                // TD List Tracking
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("TD LIST TRACKING")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(2)
-                                        .foregroundColor(themeManager.colors.textSecondary)
-                                        .padding(.horizontal, 20)
-
-                                    Toggle(isOn: $settingsTDCheckoffTracking) {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Track Check-Off Timestamps")
-                                                .font(.system(size: 12, weight: .semibold))
-                                            Text("Record when items are checked/unchecked on the TD List for future analytics")
-                                                .font(.system(size: 10))
-                                                .foregroundColor(themeManager.colors.textMuted)
-                                        }
-                                    }
-                                    .toggleStyle(.switch)
-                                    .tint(themeManager.colors.accent)
-                                    .padding(.horizontal, 20)
-                                }
-
-                                // LLM Integration
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("LLM INTEGRATION")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(2)
-                                        .foregroundColor(themeManager.colors.textSecondary)
-                                        .padding(.horizontal, 20)
-
-                                    Toggle(isOn: $settingsMorningBriefingEnabled) {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Morning Briefing (DeepSeek)")
-                                                .font(.system(size: 12, weight: .semibold))
-                                            Text("AI-powered daily summary with personalized suggestions")
-                                                .font(.system(size: 10))
-                                                .foregroundColor(themeManager.colors.textMuted)
-                                        }
-                                    }
-                                    .toggleStyle(.switch)
-                                    .tint(themeManager.colors.accent)
-                                    .padding(.horizontal, 20)
-
-                                    if settingsMorningBriefingEnabled {
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Model")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            Picker("", selection: $settingsLLMModel) {
-                                                ForEach(LLMProvider.deepseek.availableModels, id: \.id) { model in
-                                                    Text(model.label).tag(model.id)
-                                                }
-                                            }
-                                            .pickerStyle(.segmented)
-                                            .labelsHidden()
-                                        }
-                                        .padding(.horizontal, 20)
-
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("DeepSeek API Key")
-                                                .font(.system(size: 11, weight: .medium))
-                                                .foregroundColor(themeManager.colors.textSecondary)
-                                            SecureField("sk-...", text: $settingsLLMApiKey)
-                                                .textFieldStyle(.plain)
-                                                .foregroundColor(themeManager.colors.textPrimary)
-                                                .font(.system(size: 12))
-                                                .padding(.horizontal, 10)
-                                                .padding(.vertical, 6)
-                                                .background(themeManager.colors.card)
-                                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
-                                        }
-                                        .padding(.horizontal, 20)
-                                    }
-                                }
-
-                                // Data Management
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("DATA MANAGEMENT")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .tracking(2)
-                                        .foregroundColor(themeManager.colors.textSecondary)
-                                        .padding(.horizontal, 20)
-
-                                    Button(action: {
-                                        showSettingsPopup = false
-                                        _ = store.exportCSV(savePanel: true)
-                                    }) {
-                                        Text("Export All Data (CSV)")
-                                            .font(.system(size: 11, weight: .bold))
-                                            .textCase(.uppercase)
-                                            .tracking(3)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(themeManager.colors.card)
-                                            .foregroundColor(themeManager.colors.textPrimary)
-                                    }
-                                    .buttonStyle(.plain)
-                                    .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint, lineWidth: 1))
-                                    .padding(.horizontal, 20)
-                                }
-
-                                // Update button
-                                Button(action: saveSettings) {
-                                    Text("Update Configuration")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .textCase(.uppercase)
-                                        .tracking(3)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 12)
-                                        .background(themeManager.colors.accent)
-                                        .foregroundColor(themeManager.colors.background)
-                                }
-                                .buttonStyle(.plain)
-                                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.accent, lineWidth: 1))
-                                .padding(.horizontal, 20)
-                                .padding(.top, 4)
-
-                                Spacer().frame(height: 8)
-                            }
-                        }
-                    }
-                    .frame(width: 500, height: 480)
-                    .background(themeManager.colors.surface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 0)
-                            .stroke(themeManager.colors.border, lineWidth: 1)
-                    )
-                    .onAppear { loadSettings() }
-                    .alert("Configuration Updated", isPresented: $settingsShowAlert) {
-                        Button("OK") {}
-                    }
-                }
-                .transition(.opacity)
-                .animation(.easeInOut(duration: 0.2), value: showSettingsPopup)
+                settingsPopupOverlay
             }
         }
     }
 
-    // MARK: - Settings helpers
+    // MARK: - Settings Popup
+
+    @ViewBuilder
+    private var settingsPopupOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+                .onTapGesture { showSettingsPopup = false }
+
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Settings")
+                        .font(.system(size: 14, weight: .semibold))
+                        .textCase(.uppercase)
+                        .tracking(2)
+                        .foregroundColor(themeManager.colors.textPrimary)
+
+                    Spacer()
+
+                    Button(action: { showSettingsPopup = false }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(themeManager.colors.textMuted)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .overlay(alignment: .bottom) {
+                    themeManager.colors.sectionDivider.frame(height: 1)
+                }
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        settingsSection("ACADEMIC & BEHAVIORAL TARGETS") {
+                            HStack(spacing: 16) {
+                                settingsField("Reading Target (Pages)", value: $settingsReadingTarget)
+                                settingsField("Social Weight (Penalty)", value: $settingsSocialWeight)
+                            }
+                        }
+
+                        settingsSection("SLEEP OPTIMIZATION (HOURS)") {
+                            HStack(spacing: 16) {
+                                settingsField("Target Minimum", value: $settingsSleepMin)
+                                settingsField("Target Maximum", value: $settingsSleepMax)
+                                settingsField("Penalty Threshold (<)", value: $settingsSleepPenalty)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("TD LIST TRACKING")
+                                .font(.system(size: 10, weight: .semibold))
+                                .tracking(2)
+                                .foregroundColor(themeManager.colors.textSecondary)
+                                .padding(.horizontal, 20)
+
+                            Toggle(isOn: $settingsTDCheckoffTracking) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Track Check-Off Timestamps")
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text("Record when items are checked/unchecked for future analytics")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(themeManager.colors.textMuted)
+                                }
+                            }
+                            .toggleStyle(.switch)
+                            .tint(themeManager.colors.accent)
+                            .padding(.horizontal, 20)
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("LLM INTEGRATION")
+                                .font(.system(size: 10, weight: .semibold))
+                                .tracking(2)
+                                .foregroundColor(themeManager.colors.textSecondary)
+                                .padding(.horizontal, 20)
+
+                            Toggle(isOn: $settingsMorningBriefingEnabled) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Morning Briefing (DeepSeek)")
+                                        .font(.system(size: 12, weight: .semibold))
+                                    Text("AI-powered daily summary with personalized suggestions")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(themeManager.colors.textMuted)
+                                }
+                            }
+                            .toggleStyle(.switch)
+                            .tint(themeManager.colors.accent)
+                            .padding(.horizontal, 20)
+
+                            if settingsMorningBriefingEnabled {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Model")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                    Picker("", selection: $settingsLLMModel) {
+                                        ForEach(LLMProvider.deepseek.availableModels, id: \.id) { model in
+                                            Text(model.label).tag(model.id)
+                                        }
+                                    }
+                                    .pickerStyle(.segmented)
+                                    .labelsHidden()
+                                }
+                                .padding(.horizontal, 20)
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("DeepSeek API Key")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundColor(themeManager.colors.textSecondary)
+                                    SecureField("sk-...", text: $settingsLLMApiKey)
+                                        .textFieldStyle(.plain)
+                                        .foregroundColor(themeManager.colors.textPrimary)
+                                        .font(.system(size: 12))
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(themeManager.colors.surface)
+                                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("DATA MANAGEMENT")
+                                .font(.system(size: 10, weight: .semibold))
+                                .tracking(2)
+                                .foregroundColor(themeManager.colors.textSecondary)
+                                .padding(.horizontal, 20)
+
+                            Button(action: {
+                                showSettingsPopup = false
+                                _ = store.exportCSV(savePanel: true)
+                            }) {
+                                Text("Export All Data (CSV)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .textCase(.uppercase)
+                                    .tracking(3)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(themeManager.colors.surface)
+                                    .foregroundColor(themeManager.colors.textPrimary)
+                            }
+                            .buttonStyle(.plain)
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .padding(.horizontal, 20)
+                        }
+
+                        Button(action: saveSettings) {
+                            Text("Update Configuration")
+                                .font(.system(size: 11, weight: .bold))
+                                .textCase(.uppercase)
+                                .tracking(3)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(themeManager.colors.accent)
+                                .foregroundColor(themeManager.colors.background)
+                        }
+                        .buttonStyle(.plain)
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.accent, lineWidth: 1))
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+
+                        Spacer().frame(height: 8)
+                    }
+                }
+            }
+            .frame(width: 500, height: 480)
+            .background(themeManager.colors.surface)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(themeManager.colors.border, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .onAppear { loadSettings() }
+            .alert("Configuration Updated", isPresented: $settingsShowAlert) {
+                Button("OK") {}
+            }
+        }
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.2), value: showSettingsPopup)
+    }
+
+    @ViewBuilder
+    private func settingsField(_ label: String, value: Binding<Double>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(themeManager.colors.textSecondary)
+            TextField("", value: value, format: .number)
+                .textFieldStyle(.plain)
+                .foregroundColor(themeManager.colors.textPrimary)
+                .font(.system(size: 13))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(themeManager.colors.surface)
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    private func settingsField(_ label: String, value: Binding<Int>) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(themeManager.colors.textSecondary)
+            TextField("", value: value, format: .number)
+                .textFieldStyle(.plain)
+                .foregroundColor(themeManager.colors.textPrimary)
+                .font(.system(size: 13))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(themeManager.colors.surface)
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    private func settingsSection(_ title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(2)
+                .foregroundColor(themeManager.colors.textSecondary)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+
+            content()
+                .padding(.horizontal, 20)
+        }
+    }
 
     private func loadSettings() {
         settingsReadingTarget = store.config.readingTarget
@@ -638,13 +535,5 @@ struct ContentView: View {
         )
         store.updateConfig(newConfig)
         settingsShowAlert = true
-    }
-
-    private func themePreviewColor(_ theme: AppTheme) -> Color {
-        switch theme {
-        case .dark: return Color.black
-        case .blue: return Color(red: 0.36, green: 0.61, blue: 0.84)
-        case .light: return Color(red: 0.95, green: 0.95, blue: 0.95)
-        }
     }
 }

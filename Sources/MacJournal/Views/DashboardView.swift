@@ -9,7 +9,7 @@ struct DashboardView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let avail = geo.size.width - 40 // HStack spacing
+            let avail = geo.size.width - 40
             HStack(alignment: .top, spacing: 20) {
                 leftColumn
                     .frame(width: avail * 0.25)
@@ -28,25 +28,259 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Left Column (KPI Values)
+    // MARK: - Left Column (KPI Wall)
 
     private var leftColumn: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            SectionHeader(title: "KPIs")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeader(title: "KPIs")
 
-            if let latest = store.latestEntry, let kpis = latest.kpis {
-                KpiCard(label: "Tasks Done Index", value: "\(kpis.tdi)%")
-                KpiCard(label: "Efficiency", value: "\(kpis.efficiency)/100")
-                KpiCard(label: "Focus Ratio", value: String(format: "%.1f", kpis.focusRatio))
-                KpiCard(label: "Sleep Logged", value: "\(String(format: "%.1f", latest.sleepHours))h")
-            } else {
-                EmptyKpiCard(label: "Tasks Done Index")
-                EmptyKpiCard(label: "Efficiency")
-                EmptyKpiCard(label: "Focus Ratio")
-                EmptyKpiCard(label: "Sleep Logged")
+                if let latest = store.latestEntry, let kpis = latest.kpis {
+                    KpiSectionLabel("Performance")
+
+                    CompactKpiCard(
+                        label: "TDI",
+                        value: "\(kpis.tdi)",
+                        unit: "%",
+                        delta: deltaString(today: Double(kpis.tdi), avg: avgTDI),
+                        accent: MetricColors().tdi
+                    )
+
+                    CompactKpiCard(
+                        label: "Efficiency",
+                        value: "\(kpis.efficiency)",
+                        unit: "/100",
+                        delta: deltaString(today: Double(kpis.efficiency), avg: avgEfficiency),
+                        accent: MetricColors().efficiency
+                    )
+
+                    CompactKpiCard(
+                        label: "Focus Ratio",
+                        value: String(format: "%.2f", kpis.focusRatio),
+                        unit: "",
+                        delta: deltaString(today: kpis.focusRatio, avg: avgFocusRatio),
+                        accent: Color(red: 0.95, green: 0.70, blue: 0.40)
+                    )
+
+                    KpiSectionLabel("Health & Habits")
+                        .padding(.top, 6)
+
+                    CompactKpiCard(
+                        label: "Sleep",
+                        value: String(format: "%.1f", latest.sleepHours),
+                        unit: "h",
+                        statusBadge: sleepInRange ? "checkmark.circle.fill" : nil,
+                        statusColor: MetricColors().sleep,
+                        delta: deltaString(today: latest.sleepHours, avg: avgSleep),
+                        accent: MetricColors().sleep
+                    )
+
+                    CompactKpiCard(
+                        label: "Reading",
+                        value: "\(latest.readingPages)",
+                        unit: "/\(store.config.readingTarget) pg",
+                        progress: min(1.0, Double(latest.readingPages) / Double(max(1, store.config.readingTarget))),
+                        statusBadge: readingTargetMet ? "checkmark.circle.fill" : nil,
+                        statusColor: MetricColors().reading,
+                        delta: deltaString(today: Double(latest.readingPages), avg: avgReading),
+                        accent: MetricColors().reading
+                    )
+
+                    CompactKpiCard(
+                        label: "Social Media",
+                        value: "\(latest.socialMins)",
+                        unit: "min",
+                        delta: deltaString(today: Double(latest.socialMins), avg: avgSocial, inverted: true),
+                        accent: MetricColors().social
+                    )
+
+                    CompactKpiCard(
+                        label: "Diet Score",
+                        value: dietScoreText,
+                        unit: "",
+                        accent: dietColor
+                    )
+
+                    KpiSectionLabel("Execution")
+                        .padding(.top, 6)
+
+                    CompactKpiCard(
+                        label: "Professional",
+                        value: "\(latest.proDone)",
+                        unit: "/\(latest.proTotal)",
+                        progress: latest.proTotal > 0 ? Double(latest.proDone) / Double(latest.proTotal) : 0,
+                        accent: themeManager.colors.accent
+                    )
+
+                    CompactKpiCard(
+                        label: "Personal",
+                        value: "\(latest.perDone)",
+                        unit: "/\(latest.perTotal)",
+                        progress: latest.perTotal > 0 ? Double(latest.perDone) / Double(latest.perTotal) : 0,
+                        accent: themeManager.colors.accentDim
+                    )
+
+                    KpiSectionLabel("Streaks")
+                        .padding(.top, 6)
+
+                    if meditationStreak > 0 {
+                        StreakCard(icon: "sparkles", label: "Meditation", count: meditationStreak)
+                    }
+
+                    if readingStreak > 0 {
+                        StreakCard(icon: "book.fill", label: "Reading Target", count: readingStreak)
+                    }
+
+                    if meditationStreak == 0 && readingStreak == 0 {
+                        Text("Start a streak — log today.")
+                            .font(.system(size: 10))
+                            .foregroundColor(themeManager.colors.textMuted)
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity)
+                    }
+
+                    KpiSectionLabel("Quick Check")
+                        .padding(.top, 6)
+
+                    CompactKpiCard(
+                        label: "Meditated",
+                        value: latest.meditated ? "YES" : "NO",
+                        unit: "",
+                        statusBadge: latest.meditated ? "checkmark.circle.fill" : "xmark.circle.fill",
+                        statusColor: latest.meditated ? MetricColors().meditation : themeManager.colors.textMuted,
+                        accent: latest.meditated ? MetricColors().meditation : themeManager.colors.textMuted
+                    )
+                } else {
+                    ForEach(0..<8, id: \.self) { _ in
+                        EmptyCompactKpiCard()
+                    }
+                }
+
+                Spacer().frame(height: 8)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    // MARK: - 7-Day Averages
+
+    private var weekEntries: [Entry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today) else { return [] }
+        return store.entries.filter { entry in
+            let day = calendar.startOfDay(for: entry.date)
+            return day >= sevenDaysAgo && day < today
+        }
+    }
+
+    private var avgTDI: Double {
+        let vals = weekEntries.compactMap { $0.kpis?.tdi }.map(Double.init)
+        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+    }
+
+    private var avgEfficiency: Double {
+        let vals = weekEntries.compactMap { $0.kpis?.efficiency }.map(Double.init)
+        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+    }
+
+    private var avgFocusRatio: Double {
+        let vals = weekEntries.compactMap { $0.kpis?.focusRatio }
+        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+    }
+
+    private var avgSleep: Double {
+        let vals = weekEntries.map { $0.sleepHours }
+        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+    }
+
+    private var avgReading: Double {
+        let vals = weekEntries.map { Double($0.readingPages) }
+        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+    }
+
+    private var avgSocial: Double {
+        let vals = weekEntries.map { Double($0.socialMins) }
+        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+    }
+
+    private func deltaString(today: Double, avg: Double, inverted: Bool = false) -> String? {
+        guard avg > 0 else { return nil }
+        let diff = today - avg
+        if abs(diff) < 0.01 { return "\u{2014}" }
+        let arrow = (inverted ? (diff > 0 ? "\u{2191}" : "\u{2193}") : (diff > 0 ? "\u{2191}" : "\u{2193}"))
+        return "\(arrow) \(String(format: "%.1f", abs(diff)))"
+    }
+
+    private var sleepInRange: Bool {
+        guard let latest = store.latestEntry else { return false }
+        return latest.sleepHours >= store.config.sleepMin && latest.sleepHours <= store.config.sleepMax
+    }
+
+    private var readingTargetMet: Bool {
+        guard let latest = store.latestEntry else { return false }
+        return latest.readingPages >= store.config.readingTarget
+    }
+
+    private var dietScoreText: String {
+        guard let latest = store.latestEntry else { return "--" }
+        var score = 0
+        for meal in [latest.breakfast, latest.lunch, latest.dinner] {
+            if meal == .healthy { score += 5 }
+            else if meal == .junk || meal == .skipped { score -= 5 }
+        }
+        return score > 0 ? "+\(score)" : "\(score)"
+    }
+
+    private var dietColor: Color {
+        guard let latest = store.latestEntry else { return themeManager.colors.textMuted }
+        var score = 0
+        for meal in [latest.breakfast, latest.lunch, latest.dinner] {
+            if meal == .healthy { score += 5 }
+            else if meal == .junk || meal == .skipped { score -= 5 }
+        }
+        if score >= 10 { return Color(red: 0.55, green: 0.80, blue: 0.55) }
+        if score >= 0 { return MetricColors().tdi }
+        if score >= -5 { return MetricColors().reading }
+        return MetricColors().social
+    }
+
+    // MARK: - Streaks
+
+    private var meditationStreak: Int {
+        streakCount { $0.meditated }
+    }
+
+    private var readingStreak: Int {
+        streakCount { $0.readingPages >= store.config.readingTarget }
+    }
+
+    private func streakCount(matches: (Entry) -> Bool) -> Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let sorted = store.entries
+            .filter { calendar.startOfDay(for: $0.date) <= today }
+            .sorted { $0.date > $1.date }
+
+        guard let todayEntry = sorted.first,
+              calendar.startOfDay(for: todayEntry.date) == today,
+              matches(todayEntry)
+        else { return 0 }
+
+        var count = 1
+        var currentDate = today
+
+        for entry in sorted.dropFirst() {
+            let entryDay = calendar.startOfDay(for: entry.date)
+            let expectedDay = calendar.date(byAdding: .day, value: -1, to: currentDate)!
+            if entryDay == expectedDay && matches(entry) {
+                count += 1
+                currentDate = entryDay
+            } else if entryDay < expectedDay {
+                break
             }
         }
-        .slideUpAppear()
+        return count
     }
 
     // MARK: - Middle Column (TD List)
@@ -72,7 +306,6 @@ struct DashboardView: View {
                 checklistContent
             }
         }
-        .slideUpAppear()
     }
 
     private var emptyChecklistPlaceholder: some View {
@@ -87,8 +320,9 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var checklistContent: some View {
@@ -98,7 +332,7 @@ struct DashboardView: View {
                 let perItems = notesService.items.filter { $0.section == .personal }
 
                 if !proItems.isEmpty {
-                    SectionBox(title: "Professional (\(proItems.count))") {
+                    sectionBox(title: "Professional (\(proItems.count))") {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(proItems.enumerated()), id: \.element.id) { idx, item in
                                 ChecklistItemRow(
@@ -116,7 +350,7 @@ struct DashboardView: View {
                 }
 
                 if !perItems.isEmpty {
-                    SectionBox(title: "Personal & Academic (\(perItems.count))") {
+                    sectionBox(title: "Personal & Academic (\(perItems.count))") {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(perItems.enumerated()), id: \.element.id) { idx, item in
                                 ChecklistItemRow(
@@ -134,6 +368,26 @@ struct DashboardView: View {
                 }
             }
         }
+        .padding(20)
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func sectionBox(title: String, @ViewBuilder content: () -> some View) -> some View {
+        let c = themeManager.colors
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(c.accent)
+                    .textCase(.uppercase)
+                    .tracking(0.8)
+                Spacer()
+            }
+            content()
+        }
     }
 
     // MARK: - Right Column (Charts)
@@ -148,7 +402,6 @@ struct DashboardView: View {
                 emptyChartContent
             }
         }
-        .slideUpAppear()
     }
 
     private func chartContent(latest: Entry, kpis: KPIs) -> some View {
@@ -217,9 +470,8 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Diet Helpers
 
-    /// Entries from the previous 7-day window (today excluded).
     private var pastWeekEntries: [Entry] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -258,56 +510,172 @@ struct DashboardView: View {
     }
 }
 
-// MARK: - KPI Card (filled)
+// MARK: - Compact KPI Card
 
-struct KpiCard: View {
+struct CompactKpiCard: View {
     @EnvironmentObject var themeManager: ThemeManager
     let label: String
     let value: String
+    let unit: String
+    var progress: Double? = nil
+    var statusBadge: String? = nil
+    var statusColor: Color = .green
+    var delta: String? = nil
+    var accent: Color = .white
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        let c = themeManager.colors
+
+        VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(themeManager.colors.textSecondary)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(c.textMuted)
                 .textCase(.uppercase)
-                .tracking(1.5)
-            Text(value)
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(themeManager.colors.textPrimary)
+                .tracking(0.8)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(accent)
+
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(c.textMuted)
+                }
+
+                Spacer()
+
+                if let badge = statusBadge {
+                    Image(systemName: badge)
+                        .font(.system(size: 12))
+                        .foregroundColor(statusColor)
+                }
+
+                if let delta = delta {
+                    let isUp = delta.contains("\u{2191}")
+                    let isNeutral = delta == "\u{2014}"
+                    Text(delta)
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(isNeutral ? c.textMuted : (isUp ? Color(red: 0.55, green: 0.80, blue: 0.55) : MetricColors().social))
+                }
+            }
+
+            if let progress = progress {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(c.borderFaint)
+                            .frame(height: 3)
+
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(accent)
+                            .frame(width: max(3, geo.size.width * progress), height: 3)
+                    }
+                }
+                .frame(height: 3)
+                .padding(.top, 2)
+            }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(c.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(c.border, lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-// MARK: - KPI Card (empty)
+// MARK: - Empty Compact KPI Card
 
-struct EmptyKpiCard: View {
+struct EmptyCompactKpiCard: View {
     @EnvironmentObject var themeManager: ThemeManager
-    let label: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundColor(themeManager.colors.textSecondary)
+        let c = themeManager.colors
+        VStack(alignment: .leading, spacing: 4) {
+            Text("No Data")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(c.textMuted)
                 .textCase(.uppercase)
-                .tracking(1.5)
+                .tracking(0.8)
+
             Text("--")
-                .font(.system(size: 32, weight: .bold))
-                .foregroundColor(themeManager.colors.textMuted)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(c.textMuted)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(c.surface))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(c.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-// MARK: - Chart Box (filled)
+// MARK: - Streak Card
+
+struct StreakCard: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    let icon: String
+    let label: String
+    let count: Int
+
+    var body: some View {
+        let c = themeManager.colors
+
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(c.accent)
+
+            Text("\(count)")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundColor(c.textPrimary)
+
+            Text(label.lowercased())
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(c.textSecondary)
+
+            Spacer()
+
+            Text(count == 1 ? "day" : "days")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(c.textMuted)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(c.surface))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(c.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+// MARK: - Section Label (compact, KPI column)
+
+struct KpiSectionLabel: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundColor(themeManager.colors.textMuted)
+            .textCase(.uppercase)
+            .tracking(1.5)
+            .padding(.leading, 4)
+    }
+}
+
+// MARK: - Chart Box
 
 struct ChartBox<Content: View>: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -326,13 +694,13 @@ struct ChartBox<Content: View>: View {
             content
         }
         .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-// MARK: - Chart Box (empty skeleton)
+// MARK: - Chart Box (empty)
 
 struct EmptyChartBox: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -351,13 +719,13 @@ struct EmptyChartBox: View {
                 .padding()
         }
         .padding(.vertical, 16)
-        .frame(maxWidth: .infinity)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
-// MARK: - Empty Chart Skeleton (Canvas)
+// MARK: - Empty Chart Skeleton
 
 struct EmptyChartSkeleton: View {
     @EnvironmentObject var themeManager: ThemeManager

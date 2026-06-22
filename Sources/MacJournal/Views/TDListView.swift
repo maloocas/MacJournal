@@ -57,7 +57,8 @@ struct TDListView: View {
                         .padding(.vertical, 8)
                         .background(themeManager.colors.surface)
                         .foregroundColor(themeManager.colors.textSecondary)
-                        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
                     .disabled(isLoading)
@@ -84,8 +85,9 @@ struct TDListView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 48)
-                    .background(themeManager.colors.surface)
-                    .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+            .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 } else {
                     // Professional Section
                     let proItems = items.filter { $0.section == .professional }
@@ -183,8 +185,9 @@ struct TDListView: View {
                     Spacer()
                 }
                 .padding(14)
-                .background(themeManager.colors.surface)
-                .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.borderFaint))
+        .background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                 // ── Sync Button ──
                 Button(action: performSync) {
@@ -258,9 +261,9 @@ struct TDListView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(themeManager.colors.card)
+                            .background(themeManager.colors.surface)
                             .foregroundColor(themeManager.colors.textPrimary)
-                            .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.accent))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.accent, lineWidth: 1))
                         }
                         .buttonStyle(.plain)
                         .disabled(autoApply)
@@ -385,8 +388,9 @@ struct TDListView: View {
         }
         .padding(18)
         .frame(maxWidth: .infinity)
-        .background(themeManager.colors.card)
-        .overlay(RoundedRectangle(cornerRadius: 0).stroke(themeManager.colors.border))
+.background(themeManager.colors.surface)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal)
     }
 
