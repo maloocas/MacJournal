@@ -30,15 +30,15 @@ struct ThemeColors {
         textPrimary: Color.white.opacity(0.92),
         textSecondary: Color.white.opacity(0.50),
         textMuted: Color.white.opacity(0.30),
-        accent: Color(red: 0.55, green: 0.75, blue: 0.55),
-        accentDim: Color(red: 0.55, green: 0.75, blue: 0.55).opacity(0.15),
-        chartLine: Color(red: 0.55, green: 0.75, blue: 0.55),
-        chartFill: Color(red: 0.55, green: 0.75, blue: 0.55).opacity(0.08),
+        accent: Color(red: 0.25, green: 0.55, blue: 0.85),
+        accentDim: Color(red: 0.25, green: 0.55, blue: 0.85).opacity(0.15),
+        chartLine: Color(red: 0.25, green: 0.55, blue: 0.85),
+        chartFill: Color(red: 0.25, green: 0.55, blue: 0.85).opacity(0.08),
         chartGrid: Color.white.opacity(0.08),
         sectionDivider: Color.white.opacity(0.08),
         sidebarBg: Color(white: 0.06),
         dotFill: Color(white: 0.04),
-        dotStroke: Color(red: 0.55, green: 0.75, blue: 0.55)
+        dotStroke: Color(red: 0.25, green: 0.55, blue: 0.85)
     )
 }
 

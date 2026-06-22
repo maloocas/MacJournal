@@ -152,7 +152,7 @@ struct PopOutTDListView: View {
     }
 
     private func color(for item: ChecklistItem) -> Color {
-        item.section == .professional ? themeManager.colors.accent : themeManager.colors.accentDim
+        themeManager.colors.accent
     }
 
     // MARK: - Actions

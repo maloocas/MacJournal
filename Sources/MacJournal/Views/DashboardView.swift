@@ -117,7 +117,7 @@ struct DashboardView: View {
                         value: "\(latest.perDone)",
                         unit: "/\(latest.perTotal)",
                         progress: latest.perTotal > 0 ? Double(latest.perDone) / Double(latest.perTotal) : 0,
-                        accent: themeManager.colors.accentDim
+                        accent: themeManager.colors.accent
                     )
 
                     KpiSectionLabel("Streaks")

@@ -106,7 +106,7 @@ struct NotesChecklistView: View {
                                 done: result.perDone,
                                 total: result.perTotal,
                                 ratio: result.perRatio,
-                                color: themeManager.colors.accentDim
+                                color: themeManager.colors.accent
                             )
                         }
 

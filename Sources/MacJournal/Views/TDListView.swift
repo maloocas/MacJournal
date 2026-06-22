@@ -234,7 +234,7 @@ struct TDListView: View {
                                 done: result.perDone,
                                 total: result.perTotal,
                                 ratio: result.perRatio,
-                                color: themeManager.colors.accentDim
+                                color: themeManager.colors.accent
                             )
                         }
 
@@ -345,7 +345,7 @@ struct TDListView: View {
 
                     Circle()
                         .trim(from: 0, to: CGFloat(perTotal > 0 ? Double(perDone) / Double(perTotal) : 0))
-                        .stroke(themeManager.colors.accentDim, lineWidth: 4)
+                        .stroke(themeManager.colors.accent, lineWidth: 4)
                         .frame(width: 44, height: 44)
                         .rotationEffect(.degrees(-90))
 
@@ -646,7 +646,7 @@ struct ChecklistItemRow: View {
     }
 
     private var color: Color {
-        item.section == .professional ? themeManager.colors.accent : themeManager.colors.accentDim
+        themeManager.colors.accent
     }
 
     private func commitEdit() {
