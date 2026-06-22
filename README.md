@@ -61,7 +61,7 @@ swift build -c release
 bash build_app.sh
 ```
 
-The built app will be at `MacJournal DEV BUILD.app`.
+The built app will be at `MacJournal.app`.
 
 ### Migrating from the Web App
 If you were using the earlier web-based version:

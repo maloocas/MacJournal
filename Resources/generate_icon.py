@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate minimal monochrome MacJournal icon: outlined circle with notebook.
+"""Generate monochrome MacJournal icon: notebook on black background.
 Outputs 1024x1024 PNG, then creates .icns."""
 
 from PIL import Image, ImageDraw
@@ -14,34 +14,25 @@ ICONSET_DIR = os.path.join(RESOURCES, "MacJournal_Icon.iconset")
 # Monochrome color
 FG = (255, 255, 255, 255)  # white (tinted by app)
 
-# Create transparent base
-img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+# Create black base
+img = Image.new("RGBA", (SIZE, SIZE), (16, 16, 16, 255))
 draw = ImageDraw.Draw(img)
 
 cx, cy = SIZE / 2, SIZE / 2
-R = int(SIZE * 0.44)  # circle radius
-stroke = int(SIZE * 0.045)  # line weight
 
-# ── Circle outline ──
-draw.ellipse(
-    [cx - R, cy - R, cx + R, cy + R],
-    outline=FG,
-    width=stroke,
-)
-
-# ── Notebook inside circle ──
-# Clean rectangle with a spine line and page lines
-nb_w = int(R * 1.05)
+# ── Notebook on black background ──
+nb_w = int(SIZE * 0.55)
 nb_h = int(nb_w * 1.35)
 nb_x = int(cx - nb_w / 2)
 nb_y = int(cy - nb_h / 2)
 nb_corner = int(nb_w * 0.08)
+nb_stroke = int(SIZE * 0.028)
 
 draw.rounded_rectangle(
     [nb_x, nb_y, nb_x + nb_w, nb_y + nb_h],
     radius=nb_corner,
     outline=FG,
-    width=int(stroke * 0.55),
+    width=nb_stroke,
 )
 
 # Spine line (left third)
@@ -49,7 +40,7 @@ spine_x = nb_x + int(nb_w * 0.18)
 draw.line(
     [spine_x, nb_y + nb_corner, spine_x, nb_y + nb_h - nb_corner],
     fill=FG,
-    width=max(int(stroke * 0.35), 2),
+    width=max(int(nb_stroke * 0.65), 2),
 )
 
 # ── Page lines ──
@@ -58,7 +49,7 @@ line_r = nb_x + nb_w - int(nb_w * 0.15)
 ly_start = nb_y + int(nb_h * 0.22)
 ly_end = nb_y + nb_h - int(nb_h * 0.18)
 num_lines = 7
-line_weight = max(int(stroke * 0.25), 2)
+line_weight = max(int(nb_stroke * 0.5), 2)
 
 for i in range(num_lines):
     ly = int(ly_start + i * (ly_end - ly_start) / (num_lines - 1))

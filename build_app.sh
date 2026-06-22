@@ -3,9 +3,9 @@
 set -e
 
 PROJECT_DIR="$HOME/AI Projects (Coding)/MacJournal"
-APP_NAME="MacJournal DEV BUILD"
+APP_NAME="MacJournal"
 BUILD_DIR="$PROJECT_DIR/.build"
-APP_BUNDLE="$PROJECT_DIR/MacJournal DEV BUILD.app"
+APP_BUNDLE="$PROJECT_DIR/MacJournal.app"
 
 echo "→ Building MacJournal macOS app..."
 cd "$PROJECT_DIR"
