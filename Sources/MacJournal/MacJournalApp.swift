@@ -103,6 +103,7 @@ struct ContentView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @EnvironmentObject var googleAuth: GoogleAuthManager
     @EnvironmentObject var googleServices: GoogleServicesManager
+    @Namespace private var sidebarNamespace
     @State private var selectedTab: Tab = .dashboard
     @State private var entryCount: Int = 0
     @State private var showSettingsPopup = false
@@ -159,7 +160,7 @@ struct ContentView: View {
                     ForEach(Tab.allCases, id: \.self) { tab in
                         let isSelected = selectedTab == tab
                         Button(action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(.snappy(duration: 0.35)) {
                                 selectedTab = tab
                             }
                         }) {
@@ -179,12 +180,17 @@ struct ContentView: View {
                             .padding(.vertical, 12)
                             .foregroundColor(isSelected ? themeManager.colors.textPrimary : themeManager.colors.textSecondary)
                             .background(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .fill(isSelected ? themeManager.colors.accent.opacity(0.12) : Color.clear)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(isSelected ? themeManager.colors.accent.opacity(0.25) : Color.clear, lineWidth: 1)
+                                Group {
+                                    if isSelected {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .fill(themeManager.colors.accent.opacity(0.12))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                    .stroke(themeManager.colors.accent.opacity(0.25), lineWidth: 1)
+                                            )
+                                            .matchedGeometryEffect(id: "sidebarHighlight", in: sidebarNamespace)
+                                    }
+                                }
                             )
                         }
                         .buttonStyle(.plain)
@@ -192,6 +198,7 @@ struct ContentView: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.top, 8)
+                .animation(.snappy(duration: 0.35), value: selectedTab)
 
                 Spacer()
 
@@ -447,7 +454,9 @@ struct ContentView: View {
                     .stroke(themeManager.colors.border, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .onAppear { loadSettings() }
+            .onAppear {
+                loadSettings()
+            }
             .alert("Configuration Updated", isPresented: $settingsShowAlert) {
                 Button("OK") {}
             }
