@@ -46,6 +46,12 @@ secrets.json
 # ── Runtime Data ──
 Backups/
 
+# ── Editor Config ──
+.vscode/
+
+# ── Distribution ──
+dist/
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However
