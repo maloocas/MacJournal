@@ -1,107 +1,188 @@
 # MacJournal
 
-A native macOS journaling and personal metrics tracking application built for Apple Silicon. MacJournal combines structured daily KPI logging, Apple Notes todo list integration, trend visualization, and AI-powered insights into a single performant, dark-mode-native experience.
+<p align="center">
+  <img src="Resources/MacJournal_Icon.png" width="128" alt="MacJournal icon" />
+</p>
+
+<p align="center">
+  <strong>A native macOS journaling and personal metrics tracking application</strong><br>
+  Built for Apple Silicon. Dark mode native. Zero external dependencies.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/macOS-13%2B-8CBF8C" alt="macOS 13+">
+  <img src="https://img.shields.io/badge/Swift-5.9-8CBF8C" alt="Swift 5.9">
+  <img src="https://img.shields.io/badge/license-MIT-8CBF8C" alt="MIT License">
+  <img src="https://img.shields.io/badge/Apple%20Silicon-native-8CBF8C" alt="Apple Silicon Native">
+</p>
+
+---
+
+## 🤖 Agentic Installation Guide
+
+For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal automatically:
+
+```bash
+# 1. Download the DMG from the latest GitHub release
+curl -L -o /tmp/MacJournal.dmg \
+  https://github.com/maloocas/MacJournal/releases/download/v1.0.0/MacJournal.dmg
+
+# 2. Mount the disk image
+hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
+
+# 3. Copy to Applications
+cp -R "/tmp/MacJournal/MacJournal.app" /Applications/
+
+# 4. Detach and clean up
+hdiutil detach /tmp/MacJournal
+rm /tmp/MacJournal.dmg
+```
+
+**Requirements:** macOS 13+, Apple Silicon.
+
+---
 
 ## Features
 
-### Daily KPI Logging
-Track recurring daily metrics with a structured entry system:
+### 📊 Daily KPI Logging
+Track recurring daily metrics through a structured entry system:
 
 - **Sleep tracking** — hours logged with configurable target ranges
 - **Diet logging** — per-meal categorization (Healthy, Fancy, Standard, Junk, Skipped)
 - **Task completion** — split into Professional and Personal & Academic categories
 - **Reading progress** — pages read per day with configurable targets
-- **Meditation tracking** — daily check-in
+- **Meditation tracking** — daily check-in toggle
 - **Social time** — minutes spent socializing (affects efficiency scoring)
 - **Auto-computed KPIs** — Tasks Done Index (TDI), Efficiency Score, Focus Ratio, Sleep Metric, Reading Score, and per-category execution rates
 
-### Todo List (TD List)
-Sync checklists directly from Apple Notes:
+### ✅ Apple Notes TD List Sync
+Sync checklists directly from Apple Notes — your daily task list, always up to date:
 
 - **Apple Notes integration** — reads `[x]` / `[ ]` markers from your TD List note
-- **Dual sections** — Professional and Personal & Academic, each with its own progress tracking
+- **Dual sections** — Professional and Personal & Academic, each with independent progress tracking
 - **Inline editing** — tap to toggle, pencil to edit, trash to delete
 - **Auto-sync** — optionally refresh every 5 minutes
 - **Dual progress views** — progress rings and sync-section progress bars
-- **Pop-out window** — compact floating TD List view for quick access
+- **Pop-out window** — compact floating TD List view for quick access without leaving your workspace
 
-### Charts & Trends
-Visualize your data over time:
+### 📈 Charts & Trends
+Visualize your data over multiple time horizons:
 
 - **Bar chart** — weekly/monthly trends (TDI, Efficiency, Sleep, Reading, etc.)
 - **Donut chart** — diet composition breakdown
-- **Radar chart** — multi-metric daily overview
+- **Radar chart** — multi-metric daily overview snapshot
 - **Hourly checkoff chart** — time-of-day task completion distribution
-- **Trend chart** — multi-week smoothed trendlines
+- **Trend chart** — multi-week smoothed trendlines for long-term pattern recognition
 
-### AI Morning Briefing
-Powered by DeepSeek LLM, generates a daily summary with personalized suggestions based on your recent data. Configurable model selection and API key in Settings.
+### 🧠 AI Morning Briefing
+Powered by an LLM backend (DeepSeek by default, configurable), generates a daily summary with personalized suggestions based on your recent data. Configure model selection and API key in Settings.
 
-### Goals
-Set and track progress toward personal targets. Visual progress bars for each active goal.
+### 🎯 Goals
+Set and track progress toward personal targets. Each active goal displays a visual progress bar driven by your logged data.
 
-### Data Management
+### 💾 Data Management
 - **Auto-save** — entries persist immediately to local JSON storage with atomic writes
 - **Import/Export** — CSV export, JSON import/export, legacy web app import
-- **Auto-backup** — timestamped backups on every write
-- **Checkoff timestamp tracking** — optional recording of when items are checked/unchecked
+- **Auto-backup** — timestamped backups created on every write
+- **Checkoff timestamp tracking** — optional recording of when items are checked or unchecked
+
+---
+
+## Screenshots
+
+> Screenshots coming soon. In the meantime, you can build and run the app to see it in action.
+
+---
 
 ## Installation
 
-### Prerequisites
-- macOS running on Apple Silicon (M1, M2, M3, or later)
-- Xcode command-line tools (`xcode-select --install`)
+### Option 1: Download the DMG (Recommended)
 
-### Build from Source
+[Download the latest release](https://github.com/maloocas/MacJournal/releases/latest) — download `MacJournal.dmg`, open it, and drag the app to your Applications folder.
+
+**Requirements:**
+- macOS 13+ (Ventura or later)
+- Apple Silicon (M1, M2, M3, M4, or later)
+
+### Option 2: Build from Source
 
 ```bash
+# Prerequisites: Xcode command-line tools
+xcode-select --install
+
+# Clone and build
 git clone https://github.com/maloocas/MacJournal.git
 cd MacJournal
 swift build -c release
 bash build_app.sh
 ```
 
-The built app will be at `MacJournal.app`.
+The built app will be at `MacJournal.app` in the project directory.
 
-### Migrating from the Web App
-If you were using the earlier web-based version:
-
-1. Open `MacJournal.html` in Safari
-2. Open the app's bundled `export_helper.html` (inside the .app bundle at `Contents/Resources/export_helper.html`)
-3. Click Export & Download Data
-4. In the native app, go to **File > Import from Web App (JSON)...** (Cmd+Shift+I)
+---
 
 ## Usage
 
-### Keyboard Shortcuts
-| Shortcut | Action |
-|----------|--------|
-| Cmd+Shift+I | Import from web app JSON |
-| Cmd+Shift+E | Export all data as JSON |
+### Quick Start
 
-### Settings
-Access the settings panel via the gear icon in the sidebar. Configure:
-
-- **Reading Target** — daily page goal
-- **Social Weight** — penalty multiplier for social time vs productivity
-- **Sleep Optimization** — target min/max hours and penalty threshold
-- **TD List Tracking** — enable/disable checkoff timestamp recording
-- **Morning Briefing** — toggle AI briefings, select model, enter DeepSeek API key
+1. Launch MacJournal
+2. Start logging in the **Daily Log** tab — entries auto-save
+3. View your metrics on the **Dashboard** with computed KPIs
+4. Set up **Apple Notes sync** (see below) to pull in your TD List
+5. Explore **Trends** and **Insights** as your data accumulates
 
 ### Apple Notes Setup
-1. Create a note titled **"TD List"** (or configure the title in code)
-2. Add checklist items using `[x]` for completed and `[ ]` for pending
-3. Separate sections with a heading for "Professional" and "Personal & Academic"
-4. The app syncs changes both ways — toggling in the app updates the note, and vice versa
+
+MacJournal integrates with Apple Notes for task management. To enable:
+
+1. Create a note in Apple Notes titled **"TD List"**
+2. Add checklist items using `[x]` (completed) and `[ ]` (pending)
+3. Separate sections with a heading for **Professional** and **Personal & Academic**
+4. MacJournal syncs changes **both ways** — toggling an item in the app updates the note, and vice versa
+
+### Keyboard Shortcuts
+
+| Shortcut       | Action                        |
+|----------------|-------------------------------|
+| `Cmd+Shift+I`  | Import from web app JSON      |
+| `Cmd+Shift+E`  | Export all data as JSON       |
+
+### Settings
+
+Access the settings panel via the gear icon in the sidebar. Configuration options:
+
+| Setting             | Description                                                  |
+|---------------------|--------------------------------------------------------------|
+| **Reading Target**  | Daily page goal                                              |
+| **Social Weight**   | Penalty multiplier for social time vs productivity           |
+| **Sleep Optimization** | Target min/max hours and penalty threshold               |
+| **TD List Tracking** | Enable/disable checkoff timestamp recording                |
+| **Morning Briefing** | Toggle AI briefings, select model, enter API key           |
+
+### Migrating from the Web App
+
+If you were using the earlier web-based version of MacJournal:
+
+1. Open `MacJournal.html` in Safari
+2. Open the app's bundled `export_helper.html` (inside the `.app` bundle at `Contents/Resources/export_helper.html`)
+3. Click **Export & Download Data**
+4. In the native app, go to **File > Import from Web App (JSON)...** (`Cmd+Shift+I`)
+
+---
 
 ## Tech Stack
 
-- **Language:** Swift 5.9
-- **Framework:** SwiftUI (macOS 13+)
-- **Storage:** Local JSON with atomic file writes
-- **AI:** DeepSeek LLM API (configurable)
-- **Build:** Swift Package Manager (no external dependencies)
+| Component     | Technology                              |
+|---------------|-----------------------------------------|
+| Language      | Swift 5.9                               |
+| Framework     | SwiftUI (macOS 13+)                     |
+| Storage       | Local JSON with atomic file writes      |
+| AI            | DeepSeek LLM API (configurable)         |
+| Build         | Swift Package Manager                   |
+| Dependencies  | Zero external dependencies              |
+
+---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.
