@@ -55,12 +55,38 @@ cp "$PROJECT_DIR/Sources/MacJournal/Services/export_helper.html" "$APP_BUNDLE/Co
 # Copy the app icon
 cp "$PROJECT_DIR/Resources/MacJournal_Icon.icns" "$APP_BUNDLE/Contents/Resources/" 2>/dev/null || cp /tmp/MacJournal_Icon.icns "$APP_BUNDLE/Contents/Resources/" 2>/dev/null || true
 
+echo "→ Ad-hoc signing and cleaning quarantine flags..."
+codesign --force --deep --sign - "$APP_BUNDLE" 2>/dev/null || true
+xattr -cr "$APP_BUNDLE"
+
+echo "→ Creating distributable Disk Image..."
+rm -rf "$PROJECT_DIR/dist"
+mkdir -p "$PROJECT_DIR/dist"
+
+STAGING="$PROJECT_DIR/DMG-TEMP"
+rm -rf "$STAGING"
+mkdir "$STAGING"
+cp -R "$APP_BUNDLE" "$STAGING/"
+ln -s /Applications "$STAGING/"
+
+DMG_PATH="$PROJECT_DIR/dist/MacJournal.dmg"
+hdiutil create -volname "MacJournal" \
+    -srcfolder "$STAGING" \
+    -ov -format UDZO \
+    "$DMG_PATH" 2>&1
+
+rm -rf "$STAGING"
+
 echo ""
-echo "✓ App built and bundled at: $APP_BUNDLE"
+echo "✓ App bundle:  $APP_BUNDLE"
+echo "✓ Disk Image:  $DMG_PATH"
 echo ""
-echo "  To open it:  open \"$APP_BUNDLE\""
+echo "  Send the .dmg to others. They just:"
+echo "  1. Open the .dmg"
+echo "  2. Drag MacJournal to Applications"
+echo "  3. Right-click → Open (first time only)"
 echo ""
-echo "  To migrate your existing data from the web app:"
+echo "  To migrate existing data from the web app:"
 echo "  1. Open 'MacJournal.html' in Safari"
 echo "  2. Open this file in your browser (or copy URL from Safari):"
 echo "     $APP_BUNDLE/Contents/Resources/export_helper.html"

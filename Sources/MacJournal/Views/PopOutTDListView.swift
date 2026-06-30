@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Pop-Out TD List (compact, 10pt)
 
 struct PopOutTDListView: View {
-    @ObservedObject private var notesService = NotesChecklistService.shared
+    @ObservedObject private var store = DataStore.shared
     @ObservedObject private var themeManager = ThemeManager.shared
 
     @State private var proText = ""
@@ -12,7 +12,6 @@ struct PopOutTDListView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                // Header
                 HStack {
                     Text("TD List")
                         .font(.system(size: 12, weight: .bold))
@@ -22,14 +21,14 @@ struct PopOutTDListView: View {
 
                     Spacer()
 
-                    Text("\(notesService.items.count) items")
+                    Text("\(store.checklistItems.count) items")
                         .font(.system(size: 10))
                         .foregroundColor(themeManager.colors.textMuted)
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 8)
 
-                if notesService.items.isEmpty {
+                if store.checklistItems.isEmpty {
                     emptyPlaceholder
                 } else {
                     checklistSections
@@ -37,9 +36,6 @@ struct PopOutTDListView: View {
             }
         }
         .background(themeManager.colors.background)
-        .onAppear {
-            Task { await notesService.fetchItems() }
-        }
     }
 
     // MARK: - Empty
@@ -62,8 +58,8 @@ struct PopOutTDListView: View {
 
     private var checklistSections: some View {
         VStack(spacing: 10) {
-            let proItems = notesService.items.filter { $0.section == .professional }
-            let perItems = notesService.items.filter { $0.section == .personal }
+            let proItems = store.checklistItems.filter { $0.section == .professional }
+            let perItems = store.checklistItems.filter { $0.section == .personal }
 
             if !proItems.isEmpty {
                 sectionBlock(title: "Professional (\(proItems.count))", items: proItems)
@@ -104,24 +100,23 @@ struct PopOutTDListView: View {
 
     private func popoutRow(item: ChecklistItem) -> some View {
         HStack(spacing: 6) {
-            // Checkbox toggle
-            Button(action: { toggleItem(item) }) {
+            Button(action: { store.toggleChecklistItem(item) }) {
                 HStack(spacing: 6) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 2)
                             .stroke(
-                                item.isChecked ? color(for: item) : themeManager.colors.textMuted,
+                                item.isChecked ? color : themeManager.colors.textMuted,
                                 lineWidth: 1.5
                             )
                             .frame(width: 16, height: 16)
                             .background(
-                                item.isChecked ? color(for: item).opacity(0.15) : Color.clear
+                                item.isChecked ? color.opacity(0.15) : Color.clear
                             )
 
                         if item.isChecked {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(color(for: item))
+                                .foregroundColor(color)
                         }
                     }
 
@@ -138,8 +133,7 @@ struct PopOutTDListView: View {
             }
             .buttonStyle(.plain)
 
-            // Delete
-            Button(action: { deleteItem(item) }) {
+            Button(action: { store.deleteChecklistItem(item) }) {
                 Image(systemName: "trash")
                     .font(.system(size: 10))
                     .foregroundColor(themeManager.colors.textMuted.opacity(0.7))
@@ -151,21 +145,7 @@ struct PopOutTDListView: View {
         .padding(.horizontal, 4)
     }
 
-    private func color(for item: ChecklistItem) -> Color {
+    private var color: Color {
         themeManager.colors.accent
-    }
-
-    // MARK: - Actions
-
-    private func toggleItem(_ item: ChecklistItem) {
-        Task {
-            await notesService.toggleItem(item, store: DataStore.shared)
-        }
-    }
-
-    private func deleteItem(_ item: ChecklistItem) {
-        Task {
-            await notesService.deleteItem(item, store: DataStore.shared)
-        }
     }
 }

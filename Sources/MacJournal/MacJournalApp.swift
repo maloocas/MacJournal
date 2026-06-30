@@ -7,19 +7,11 @@ import AppKit
 struct MacJournalApp: App {
     @StateObject private var store = DataStore.shared
     @StateObject private var themeManager = ThemeManager.shared
-    @StateObject private var googleAuth = GoogleAuthManager()
-    @StateObject private var googleServices: GoogleServicesManager = {
-        let manager = GoogleServicesManager()
-        return manager
-    }()
-
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
                 .environmentObject(themeManager)
-                .environmentObject(googleAuth)
-                .environmentObject(googleServices)
                 .preferredColorScheme(.dark)
                 .onAppear {
                     NSApp.appearance = NSAppearance(named: .darkAqua)
@@ -101,8 +93,6 @@ struct MacJournalApp: App {
 struct ContentView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
-    @EnvironmentObject var googleAuth: GoogleAuthManager
-    @EnvironmentObject var googleServices: GoogleServicesManager
     @Namespace private var sidebarNamespace
     @State private var selectedTab: Tab = .dashboard
     @State private var entryCount: Int = 0
@@ -266,12 +256,6 @@ struct ContentView: View {
         }
         .frame(minWidth: 1000, minHeight: 500)
         .background(themeManager.colors.background)
-        .task {
-            await googleAuth.restoreSessionIfAvailable()
-            if googleAuth.isAuthenticated {
-                await googleServices.configureAll(with: googleAuth)
-            }
-        }
         .overlay {
             if showSettingsPopup {
                 settingsPopupOverlay

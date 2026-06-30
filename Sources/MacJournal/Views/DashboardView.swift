@@ -5,7 +5,6 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
-    @StateObject private var notesService = NotesChecklistService.shared
 
     var body: some View {
         GeometryReader { geo in
@@ -23,9 +22,6 @@ struct DashboardView: View {
         }
         .padding(20)
         .background(themeManager.colors.background)
-        .onAppear {
-            Task { await notesService.fetchItems() }
-        }
     }
 
     // MARK: - Left Column (KPI Wall)
@@ -300,7 +296,7 @@ struct DashboardView: View {
                 .padding(.top, 12)
             }
 
-            if notesService.items.isEmpty {
+            if store.checklistItems.isEmpty {
                 emptyChecklistPlaceholder
             } else {
                 checklistContent
@@ -328,8 +324,8 @@ struct DashboardView: View {
     private var checklistContent: some View {
         ScrollView {
             VStack(spacing: 16) {
-                let proItems = notesService.items.filter { $0.section == .professional }
-                let perItems = notesService.items.filter { $0.section == .personal }
+                let proItems = store.checklistItems.filter { $0.section == .professional }
+                let perItems = store.checklistItems.filter { $0.section == .personal }
 
                 if !proItems.isEmpty {
                     sectionBox(title: "Professional (\(proItems.count))") {
@@ -459,15 +455,11 @@ struct DashboardView: View {
     // MARK: - Checklist Actions
 
     private func toggleItem(_ item: ChecklistItem) {
-        Task {
-            await notesService.toggleItem(item, store: store)
-        }
+        store.toggleChecklistItem(item)
     }
 
     private func deleteItem(_ item: ChecklistItem) {
-        Task {
-            await notesService.deleteItem(item, store: store)
-        }
+        store.deleteChecklistItem(item)
     }
 
     // MARK: - Diet Helpers

@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.0.0/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.0.1/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -55,14 +55,12 @@ Track recurring daily metrics through a structured entry system:
 - **Social time** — minutes spent socializing (affects efficiency scoring)
 - **Auto-computed KPIs** — Tasks Done Index (TDI), Efficiency Score, Focus Ratio, Sleep Metric, Reading Score, and per-category execution rates
 
-### ✅ Apple Notes TD List Sync
-Sync checklists directly from Apple Notes — your daily task list, always up to date:
+### 📋 TD List
+Daily task management with local checklists:
 
-- **Apple Notes integration** — reads `[x]` / `[ ]` markers from your TD List note
 - **Dual sections** — Professional and Personal & Academic, each with independent progress tracking
 - **Inline editing** — tap to toggle, pencil to edit, trash to delete
-- **Auto-sync** — optionally refresh every 5 minutes
-- **Dual progress views** — progress rings and sync-section progress bars
+- **Dual progress views** — progress rings and section progress bars
 - **Pop-out window** — compact floating TD List view for quick access without leaving your workspace
 
 ### 📈 Charts & Trends
@@ -128,17 +126,7 @@ The built app will be at `MacJournal.app` in the project directory.
 1. Launch MacJournal
 2. Start logging in the **Daily Log** tab — entries auto-save
 3. View your metrics on the **Dashboard** with computed KPIs
-4. Set up **Apple Notes sync** (see below) to pull in your TD List
-5. Explore **Trends** and **Insights** as your data accumulates
-
-### Apple Notes Setup
-
-MacJournal integrates with Apple Notes for task management. To enable:
-
-1. Create a note in Apple Notes titled **"TD List"**
-2. Add checklist items using `[x]` (completed) and `[ ]` (pending)
-3. Separate sections with a heading for **Professional** and **Personal & Academic**
-4. MacJournal syncs changes **both ways** — toggling an item in the app updates the note, and vice versa
+4. Explore **Trends** and **Insights** as your data accumulates
 
 ### Keyboard Shortcuts
 

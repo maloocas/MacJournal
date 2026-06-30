@@ -46,14 +46,16 @@ struct AppData: Codable {
     var config: AppConfig
     var journalEntries: [JournalEntry]?
     var tdCheckoffEvents: [TDCheckoffEvent]?
+    var checklistItems: [ChecklistItem]?
     var morningBriefing: MorningBriefing?
     var goals: [Goal]?
 
-    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil) {
+    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil) {
         self.entries = entries
         self.config = config
         self.journalEntries = journalEntries
         self.tdCheckoffEvents = tdCheckoffEvents
+        self.checklistItems = checklistItems
         self.morningBriefing = morningBriefing
         self.goals = goals
     }
@@ -65,6 +67,8 @@ struct AppData: Codable {
         journalEntries = try container.decodeIfPresent([JournalEntry].self, forKey: .journalEntries)
         // Silently drop corrupted checkoff events — never let them sink the entire load
         tdCheckoffEvents = (try? container.decodeIfPresent([TDCheckoffEvent].self, forKey: .tdCheckoffEvents)) ?? nil
+        // Silently drop corrupted checklist items — never let them sink the entire load
+        checklistItems = (try? container.decodeIfPresent([ChecklistItem].self, forKey: .checklistItems)) ?? nil
         // Silently drop corrupted briefing — never let it sink the entire load
         morningBriefing = (try? container.decodeIfPresent(MorningBriefing.self, forKey: .morningBriefing)) ?? nil
         // Silently drop corrupted goals — never let them sink the entire load
