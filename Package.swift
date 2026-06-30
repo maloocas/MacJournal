@@ -13,7 +13,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "MacJournal",
-            path: "Sources/MacJournal"
+            path: "Sources/MacJournal",
+            resources: [
+                .process("Services/export_helper.html"),
+            ]
         )
     ]
 )

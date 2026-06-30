@@ -14,6 +14,7 @@ class DataStore: ObservableObject {
     @Published var isGeneratingBriefing = false
     @Published var briefingError: String? = nil
     @Published var goals: [Goal] = []
+    @Published var subscriptions: [Subscription] = []
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -53,6 +54,7 @@ class DataStore: ObservableObject {
         checklistItems = appData.checklistItems ?? []
         morningBriefing = appData.morningBriefing
         goals = appData.goals ?? []
+        subscriptions = appData.subscriptions ?? []
         sortEntries()
         sortJournal()
         recalculateAllKPIs()
@@ -69,7 +71,7 @@ class DataStore: ObservableObject {
                 return
             }
         }
-        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals)
+        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions)
         guard let data = try? encoder.encode(appData) else { return }
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
@@ -237,6 +239,34 @@ class DataStore: ObservableObject {
 
     func deleteGoal(id: UUID) {
         goals.removeAll { $0.id == id }
+        save()
+    }
+
+    // MARK: - Subscriptions
+
+    func addSubscription(name: String, amount: Double, billingCycle: BillingCycle, nextPaymentDate: Date, notes: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty, amount > 0 else { return }
+        let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        let sub = Subscription(name: trimmedName, amount: amount, billingCycle: billingCycle, nextPaymentDate: nextPaymentDate, notes: trimmedNotes)
+        subscriptions.append(sub)
+        save()
+    }
+
+    func updateSubscription(id: UUID, name: String, amount: Double, billingCycle: BillingCycle, nextPaymentDate: Date, notes: String) {
+        guard let idx = subscriptions.firstIndex(where: { $0.id == id }) else { return }
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty, amount > 0 else { return }
+        subscriptions[idx].name = trimmedName
+        subscriptions[idx].amount = amount
+        subscriptions[idx].billingCycle = billingCycle
+        subscriptions[idx].nextPaymentDate = nextPaymentDate
+        subscriptions[idx].notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        save()
+    }
+
+    func deleteSubscription(id: UUID) {
+        subscriptions.removeAll { $0.id == id }
         save()
     }
 

@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.0.1/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.0.2/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -61,7 +61,15 @@ Daily task management with local checklists:
 - **Dual sections** — Professional and Personal & Academic, each with independent progress tracking
 - **Inline editing** — tap to toggle, pencil to edit, trash to delete
 - **Dual progress views** — progress rings and section progress bars
-- **Pop-out window** — compact floating TD List view for quick access without leaving your workspace
+- **Pop-out window** — compact floating TD List view
+
+### 💳 Subscription Tracking
+Track recurring subscriptions and expenses:
+
+- **Name, amount, billing cycle** — monthly, yearly, weekly, or custom
+- **Next payment date** — never miss a renewal
+- **Inline editing** — edit or delete subscriptions
+- **Persistent storage** — synced with your journal data
 
 ### 📈 Charts & Trends
 Visualize your data over multiple time horizons:

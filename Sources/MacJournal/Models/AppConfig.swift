@@ -49,8 +49,9 @@ struct AppData: Codable {
     var checklistItems: [ChecklistItem]?
     var morningBriefing: MorningBriefing?
     var goals: [Goal]?
+    var subscriptions: [Subscription]?
 
-    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil) {
+    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil) {
         self.entries = entries
         self.config = config
         self.journalEntries = journalEntries
@@ -58,6 +59,7 @@ struct AppData: Codable {
         self.checklistItems = checklistItems
         self.morningBriefing = morningBriefing
         self.goals = goals
+        self.subscriptions = subscriptions
     }
 
     init(from decoder: Decoder) throws {
@@ -73,5 +75,7 @@ struct AppData: Codable {
         morningBriefing = (try? container.decodeIfPresent(MorningBriefing.self, forKey: .morningBriefing)) ?? nil
         // Silently drop corrupted goals — never let them sink the entire load
         goals = (try? container.decodeIfPresent([Goal].self, forKey: .goals)) ?? nil
+        // Silently drop corrupted subscriptions — never let them sink the entire load
+        subscriptions = (try? container.decodeIfPresent([Subscription].self, forKey: .subscriptions)) ?? nil
     }
 }

@@ -116,6 +116,7 @@ struct ContentView: View {
         case stats = "Stats"
         case insights = "Insights"
         case goals = "Goals"
+        case subscriptions = "SUBS"
 
         var icon: String {
             switch self {
@@ -126,6 +127,7 @@ struct ContentView: View {
             case .stats: return "chart.xyaxis.line"
             case .insights: return "lightbulb"
             case .goals: return "target"
+            case .subscriptions: return "creditcard"
             }
         }
     }
@@ -251,6 +253,10 @@ struct ContentView: View {
 
                 GoalsView()
                     .opacity(selectedTab == .goals ? 1 : 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                SubscriptionsView()
+                    .opacity(selectedTab == .subscriptions ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
