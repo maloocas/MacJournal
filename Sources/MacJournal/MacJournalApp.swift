@@ -110,13 +110,13 @@ struct ContentView: View {
 
     enum Tab: String, CaseIterable {
         case dashboard = "Dashboard"
-        case tdList = "TD List"
-        case journal = "Journal"
         case dailyLog = "Daily Log"
+        case tdList = "TD List"
         case stats = "Stats"
         case insights = "Insights"
+        case journal = "Journal"
         case goals = "Goals"
-        case subscriptions = "SUBS"
+        case subscriptions = "Subscriptions"
 
         var icon: String {
             switch self {
@@ -133,7 +133,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        HSplitView {
+        HStack(spacing: 0) {
             // --- Sidebar ---
             VStack(spacing: 0) {
                 Text("MJ")
@@ -221,7 +221,7 @@ struct ContentView: View {
                     themeManager.colors.sectionDivider.frame(height: 1)
                 }
             }
-            .frame(minWidth: 170, idealWidth: 190, maxWidth: 210)
+            .frame(minWidth: 240, maxWidth: 240)
             .background(themeManager.colors.sidebarBg)
             .onAppear { entryCount = store.entries.count }
 
