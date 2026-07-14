@@ -9,6 +9,11 @@ struct StatsView: View {
 
     private let colors = MetricColors()
 
+    private var recentEntries: [Entry] {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -store.config.statsWindowDays, to: Date())!
+        return store.chronoEntries.filter { $0.date >= cutoff }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -24,12 +29,6 @@ struct StatsView: View {
                     chartGrid
                         .padding(.horizontal)
                         .opacity(showCharts ? 1 : 0)
-
-                    // Hourly Checkoff Chart
-                    if store.config.tdCheckoffTracking {
-                        HourlyCheckoffChart(events: store.tdCheckoffEvents)
-                            .padding(.horizontal)
-                    }
                 }
             }
             .padding(.vertical, 16)
@@ -60,7 +59,7 @@ struct StatsView: View {
     // MARK: - KPI Summary Row
 
     private var kpiSummaryRow: some View {
-        let entries = store.chronoEntries
+        let entries = recentEntries
         let avgEff = average(entries.map { Double($0.kpis?.efficiency ?? 0) })
         let avgTDI = average(entries.map { Double($0.kpis?.tdi ?? 0) })
         let totalRead = entries.reduce(0) { $0 + $1.readingPages }
@@ -104,7 +103,7 @@ struct StatsView: View {
     // MARK: - Chart Grid (2 columns)
 
     private var chartGrid: some View {
-        let entries = store.chronoEntries
+        let entries = recentEntries
         let dateRange = dateRangeText(from: entries)
 
         return VStack(alignment: .leading, spacing: 18) {
@@ -167,6 +166,12 @@ struct StatsView: View {
                     subtitle: "Total done per day",
                     lineColor: colors.tasks
                 )
+
+                if store.config.tdCheckoffTracking {
+                    let cutoff = Calendar.current.date(byAdding: .day, value: -store.config.statsWindowDays, to: Date())!
+                    let recentEvents = store.tdCheckoffEvents.filter { $0.timestamp >= cutoff }
+                    HourlyCheckoffChart(events: recentEvents)
+                }
             }
         }
     }

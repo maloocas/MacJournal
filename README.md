@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.0.2/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.0.3/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -77,7 +77,8 @@ Visualize your data over multiple time horizons:
 - **Bar chart** — weekly/monthly trends (TDI, Efficiency, Sleep, Reading, etc.)
 - **Donut chart** — diet composition breakdown
 - **Radar chart** — multi-metric daily overview snapshot
-- **Hourly checkoff chart** — time-of-day task completion distribution
+- **Hourly checkoff chart** — time-of-day task completion distribution, integrated into the chart grid
+- **Configurable chart window** — set the rolling time frame (in days) via Settings
 - **Trend chart** — multi-week smoothed trendlines for long-term pattern recognition
 
 ### 🧠 AI Morning Briefing
@@ -152,6 +153,7 @@ Access the settings panel via the gear icon in the sidebar. Configuration option
 | **Reading Target**  | Daily page goal                                              |
 | **Social Weight**   | Penalty multiplier for social time vs productivity           |
 | **Sleep Optimization** | Target min/max hours and penalty threshold               |
+| **Chart Window**    | Rolling day range for stats trend charts                    |
 | **TD List Tracking** | Enable/disable checkoff timestamp recording                |
 | **Morning Briefing** | Toggle AI briefings, select model, enter API key           |
 

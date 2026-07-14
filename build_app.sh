@@ -58,9 +58,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'PLIST'
     <key>CFBundleName</key>
     <string>MacJournal</string>
     <key>CFBundleVersion</key>
-    <string>1.0.2</string>
+    <string>1.0.3</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.2</string>
+    <string>1.0.3</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>

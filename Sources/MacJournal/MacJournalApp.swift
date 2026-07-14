@@ -103,6 +103,7 @@ struct ContentView: View {
     @State private var settingsSleepMax: Double = 9.0
     @State private var settingsSleepPenalty: Double = 6.0
     @State private var settingsTDCheckoffTracking = false
+    @State private var settingsStatsWindowDays: Int = 30
     @State private var settingsMorningBriefingEnabled = false
     @State private var settingsLLMApiKey = ""
     @State private var settingsLLMModel = "deepseek-v4-flash"
@@ -318,6 +319,10 @@ struct ContentView: View {
                             }
                         }
 
+                        settingsSection("STATS DISPLAY") {
+                            settingsField("Chart Window (Days)", value: $settingsStatsWindowDays)
+                        }
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text("TD LIST TRACKING")
                                 .font(.system(size: 10, weight: .semibold))
@@ -513,6 +518,7 @@ struct ContentView: View {
         settingsSleepMax = store.config.sleepMax
         settingsSleepPenalty = store.config.sleepPenaltyThreshold
         settingsTDCheckoffTracking = store.config.tdCheckoffTracking
+        settingsStatsWindowDays = store.config.statsWindowDays
         settingsMorningBriefingEnabled = store.config.llmConfig.morningBriefingEnabled
         settingsLLMApiKey = store.config.llmConfig.apiKey
         settingsLLMModel = store.config.llmConfig.model
@@ -530,6 +536,7 @@ struct ContentView: View {
             sleepMax: max(settingsSleepMin, settingsSleepMax),
             sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin)),
             tdCheckoffTracking: settingsTDCheckoffTracking,
+            statsWindowDays: max(1, settingsStatsWindowDays),
             llmConfig: llmConfig
         )
         store.updateConfig(newConfig)

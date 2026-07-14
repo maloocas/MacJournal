@@ -67,7 +67,7 @@ struct HourlyCheckoffChart: View {
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 180)
+                .frame(height: 150)
             } else {
                 Chart(hourlyData) { bucket in
                     BarMark(
@@ -103,12 +103,12 @@ struct HourlyCheckoffChart: View {
                     }
                 }
                 .chartPlotStyle { $0.background(.clear) }
-                .frame(height: 200)
+                .frame(height: 150)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
             }
         }
-        .padding(.vertical, 14)
+        .padding(18)
         .background(themeManager.colors.surface)
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

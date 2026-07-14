@@ -9,6 +9,7 @@ struct AppConfig: Codable {
     var sleepMax: Double = 9.0
     var sleepPenaltyThreshold: Double = 6.0
     var tdCheckoffTracking: Bool = false
+    var statsWindowDays: Int = 30
     var llmConfig: LLMConfig = LLMConfig()
 
     init(readingTarget: Int = 50,
@@ -17,6 +18,7 @@ struct AppConfig: Codable {
          sleepMax: Double = 9.0,
          sleepPenaltyThreshold: Double = 6.0,
          tdCheckoffTracking: Bool = false,
+         statsWindowDays: Int = 30,
          llmConfig: LLMConfig = LLMConfig()) {
         self.readingTarget = readingTarget
         self.socialWeight = socialWeight
@@ -24,6 +26,7 @@ struct AppConfig: Codable {
         self.sleepMax = sleepMax
         self.sleepPenaltyThreshold = sleepPenaltyThreshold
         self.tdCheckoffTracking = tdCheckoffTracking
+        self.statsWindowDays = statsWindowDays
         self.llmConfig = llmConfig
     }
 
@@ -35,6 +38,7 @@ struct AppConfig: Codable {
         sleepMax = try container.decodeIfPresent(Double.self, forKey: .sleepMax) ?? 9.0
         sleepPenaltyThreshold = try container.decodeIfPresent(Double.self, forKey: .sleepPenaltyThreshold) ?? 6.0
         tdCheckoffTracking = try container.decodeIfPresent(Bool.self, forKey: .tdCheckoffTracking) ?? false
+        statsWindowDays = try container.decodeIfPresent(Int.self, forKey: .statsWindowDays) ?? 30
         llmConfig = try container.decodeIfPresent(LLMConfig.self, forKey: .llmConfig) ?? LLMConfig()
     }
 }
