@@ -10,6 +10,7 @@ struct AppConfig: Codable {
     var sleepPenaltyThreshold: Double = 6.0
     var tdCheckoffTracking: Bool = false
     var statsWindowDays: Int = 30
+    var accentColor: String = "blue"
     var llmConfig: LLMConfig = LLMConfig()
 
     init(readingTarget: Int = 50,
@@ -19,6 +20,7 @@ struct AppConfig: Codable {
          sleepPenaltyThreshold: Double = 6.0,
          tdCheckoffTracking: Bool = false,
          statsWindowDays: Int = 30,
+         accentColor: String = "blue",
          llmConfig: LLMConfig = LLMConfig()) {
         self.readingTarget = readingTarget
         self.socialWeight = socialWeight
@@ -27,6 +29,7 @@ struct AppConfig: Codable {
         self.sleepPenaltyThreshold = sleepPenaltyThreshold
         self.tdCheckoffTracking = tdCheckoffTracking
         self.statsWindowDays = statsWindowDays
+        self.accentColor = accentColor
         self.llmConfig = llmConfig
     }
 
@@ -39,6 +42,7 @@ struct AppConfig: Codable {
         sleepPenaltyThreshold = try container.decodeIfPresent(Double.self, forKey: .sleepPenaltyThreshold) ?? 6.0
         tdCheckoffTracking = try container.decodeIfPresent(Bool.self, forKey: .tdCheckoffTracking) ?? false
         statsWindowDays = try container.decodeIfPresent(Int.self, forKey: .statsWindowDays) ?? 30
+        accentColor = try container.decodeIfPresent(String.self, forKey: .accentColor) ?? "blue"
         llmConfig = try container.decodeIfPresent(LLMConfig.self, forKey: .llmConfig) ?? LLMConfig()
     }
 }

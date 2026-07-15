@@ -58,6 +58,7 @@ class DataStore: ObservableObject {
         sortEntries()
         sortJournal()
         recalculateAllKPIs()
+        ThemeManager.shared.applyAccent(config.accentColor)
     }
 
     func save() {

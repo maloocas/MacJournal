@@ -6,6 +6,8 @@ struct DailyLogView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
 
+    let isVisible: Bool
+
     @State private var logDate = Date()
     @State private var sleepHours: Double = 7.0
     @State private var socialMins: Int = 0
@@ -298,6 +300,12 @@ struct DailyLogView: View {
             .padding(.vertical, 16)
         }
         .background(themeManager.colors.background)
+        .onAppear {
+            loadEntryForDate()
+        }
+        .onChange(of: isVisible) { visible in
+            if visible { loadEntryForDate() }
+        }
         .alert(editingExisting ? "Entry Updated" : "Data Log Committed", isPresented: $showAlert) {
             Button("OK") { resetForm() }
         } message: {
@@ -305,7 +313,7 @@ struct DailyLogView: View {
         }
     }
 
-    // MARK: - Date helpers
+    // MARK: - Date helpers and checklist sync
 
     private func formattedDate(_ date: Date) -> String {
         let f = DateFormatter()
@@ -313,9 +321,23 @@ struct DailyLogView: View {
         return f.string(from: date)
     }
 
+    private func syncChecklistCounts() {
+        let proItems = store.checklistItems.filter { $0.section == .professional }
+        let perItems = store.checklistItems.filter { $0.section == .personal }
+        proTotal = proItems.count
+        proDone = proItems.filter { $0.isChecked }.count
+        perTotal = perItems.count
+        perDone = perItems.filter { $0.isChecked }.count
+    }
+
     // MARK: - Load existing entry for the selected date
 
     private func loadEntryForDate() {
+        // Auto-sync checklist counts for today (TD List is source of truth)
+        if Calendar.current.isDate(logDate, inSameDayAs: Date()) {
+            syncChecklistCounts()
+        }
+
         if let existing = store.entries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: logDate) }) {
             loadEntryIntoForm(existing)
         }

@@ -107,6 +107,7 @@ struct ContentView: View {
     @State private var settingsMorningBriefingEnabled = false
     @State private var settingsLLMApiKey = ""
     @State private var settingsLLMModel = "deepseek-v4-flash"
+    @State private var settingsAccentColor = "blue"
     @State private var settingsShowAlert = false
 
     enum Tab: String, CaseIterable {
@@ -240,7 +241,7 @@ struct ContentView: View {
                     .opacity(selectedTab == .journal ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                DailyLogView()
+                DailyLogView(isVisible: selectedTab == .dailyLog)
                     .opacity(selectedTab == .dailyLog ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -321,6 +322,10 @@ struct ContentView: View {
 
                         settingsSection("STATS DISPLAY") {
                             settingsField("Chart Window (Days)", value: $settingsStatsWindowDays)
+                        }
+
+                        settingsSection("ACCENT COLOR") {
+                            accentColorPicker
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
@@ -442,7 +447,7 @@ struct ContentView: View {
                     }
                 }
             }
-            .frame(width: 500, height: 480)
+            .frame(width: 500, height: 540)
             .background(themeManager.colors.surface)
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -511,6 +516,34 @@ struct ContentView: View {
         }
     }
 
+    private var accentColorPicker: some View {
+        HStack(spacing: 10) {
+            ForEach(AccentOption.all) { option in
+                let isSelected = settingsAccentColor == option.id
+                Button(action: { settingsAccentColor = option.id }) {
+                    Circle()
+                        .fill(option.base)
+                        .frame(width: 28, height: 28)
+                        .overlay(
+                            Circle()
+                                .stroke(isSelected ? Color.white : Color.clear, lineWidth: 2.5)
+                                .padding(2)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(isSelected ? Color.black.opacity(0.3) : Color.clear, lineWidth: 4.5)
+                        )
+                        .shadow(color: option.base.opacity(isSelected ? 0.6 : 0.2), radius: isSelected ? 8 : 4)
+                        .scaleEffect(isSelected ? 1.15 : 1.0)
+                        .animation(.easeInOut(duration: 0.15), value: isSelected)
+                }
+                .buttonStyle(.plain)
+                .help(option.label)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
     private func loadSettings() {
         settingsReadingTarget = store.config.readingTarget
         settingsSocialWeight = store.config.socialWeight
@@ -522,6 +555,7 @@ struct ContentView: View {
         settingsMorningBriefingEnabled = store.config.llmConfig.morningBriefingEnabled
         settingsLLMApiKey = store.config.llmConfig.apiKey
         settingsLLMModel = store.config.llmConfig.model
+        settingsAccentColor = store.config.accentColor
     }
 
     private func saveSettings() {
@@ -537,9 +571,11 @@ struct ContentView: View {
             sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin)),
             tdCheckoffTracking: settingsTDCheckoffTracking,
             statsWindowDays: max(1, settingsStatsWindowDays),
+            accentColor: settingsAccentColor,
             llmConfig: llmConfig
         )
         store.updateConfig(newConfig)
+        ThemeManager.shared.applyAccent(settingsAccentColor)
         settingsShowAlert = true
     }
 }
