@@ -77,7 +77,7 @@ class DataStore: ObservableObject {
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
         try? data.write(to: tempURL, options: .atomic)
-        try? FileManager.default.replaceItemAt(dataURL, withItemAt: tempURL)
+        _ = try? FileManager.default.replaceItemAt(dataURL, withItemAt: tempURL)
 
         // Auto-backup: timestamped copy in Backups/
         writeBackup(data: data)

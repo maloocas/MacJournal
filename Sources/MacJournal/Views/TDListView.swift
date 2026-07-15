@@ -6,9 +6,6 @@ struct TDListView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
 
-    @State private var showAlert = false
-    @State private var alertMessage = ""
-
     @State private var proNewText = ""
     @State private var perNewText = ""
 
@@ -103,11 +100,7 @@ struct TDListView: View {
             .padding(.horizontal)
         }
         .background(themeManager.colors.background)
-        .alert("TD List", isPresented: $showAlert) {
-            Button("OK") { }
-        } message: {
-            Text(alertMessage)
-        }
+
     }
 
     // MARK: - Progress Overview Card
@@ -268,12 +261,6 @@ struct TDListView: View {
 
     private func toggleItem(_ item: ChecklistItem) {
         store.toggleChecklistItem(item)
-        let proDone = store.checklistItems.filter { $0.section == .professional && $0.isChecked }.count
-        let proTotal = store.checklistItems.filter { $0.section == .professional }.count
-        let perDone = store.checklistItems.filter { $0.section == .personal && $0.isChecked }.count
-        let perTotal = store.checklistItems.filter { $0.section == .personal }.count
-        alertMessage = "Pro \(proDone)/\(proTotal) · Personal \(perDone)/\(perTotal)"
-        showAlert = true
     }
 
     private func deleteItem(_ item: ChecklistItem) {
