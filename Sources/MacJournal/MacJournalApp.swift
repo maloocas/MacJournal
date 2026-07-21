@@ -7,6 +7,8 @@ import AppKit
 struct MacJournalApp: App {
     @StateObject private var store = DataStore.shared
     @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var screenTracker = ScreenTrackerService(store: DataStore.shared)
+
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -16,6 +18,7 @@ struct MacJournalApp: App {
                 .onAppear {
                     NSApp.appearance = NSAppearance(named: .darkAqua)
                     NSApp.windows.forEach { $0.backgroundColor = NSColor(white: 0.04, alpha: 1) }
+                    screenTracker.start()
                 }
         }
         .windowStyle(.titleBar)
@@ -120,6 +123,7 @@ struct ContentView: View {
         case goals = "Goals"
         case subscriptions = "Subscriptions"
         case trapShooting = "Trap Shooting"
+        case sessionStats = "Session Stats"
 
         var icon: String {
             switch self {
@@ -132,6 +136,7 @@ struct ContentView: View {
             case .goals: return "target"
             case .subscriptions: return "creditcard"
             case .trapShooting: return "scope"
+            case .sessionStats: return "timer"
             }
         }
     }
@@ -265,6 +270,10 @@ struct ContentView: View {
 
                 TrapShootingView()
                     .opacity(selectedTab == .trapShooting ? 1 : 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                NotSpywareView()
+                    .opacity(selectedTab == .sessionStats ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }

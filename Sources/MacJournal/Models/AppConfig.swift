@@ -60,8 +60,9 @@ struct AppData: Codable {
     var subscriptions: [Subscription]?
     var trapShootingSets: [TrapShootingSet]?
     var trapAnalysis: TrapAnalysis?
+    var screenUsageSessions: [ScreenUsageSession]?
 
-    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil, trapShootingSets: [TrapShootingSet]? = nil, trapAnalysis: TrapAnalysis? = nil) {
+    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil, trapShootingSets: [TrapShootingSet]? = nil, trapAnalysis: TrapAnalysis? = nil, screenUsageSessions: [ScreenUsageSession]? = nil) {
         self.entries = entries
         self.config = config
         self.journalEntries = journalEntries
@@ -72,6 +73,7 @@ struct AppData: Codable {
         self.subscriptions = subscriptions
         self.trapShootingSets = trapShootingSets
         self.trapAnalysis = trapAnalysis
+        self.screenUsageSessions = screenUsageSessions
     }
 
     init(from decoder: Decoder) throws {
@@ -91,5 +93,6 @@ struct AppData: Codable {
         subscriptions = (try? container.decodeIfPresent([Subscription].self, forKey: .subscriptions)) ?? nil
         trapShootingSets = (try? container.decodeIfPresent([TrapShootingSet].self, forKey: .trapShootingSets)) ?? nil
         trapAnalysis = (try? container.decodeIfPresent(TrapAnalysis.self, forKey: .trapAnalysis)) ?? nil
+        screenUsageSessions = (try? container.decodeIfPresent([ScreenUsageSession].self, forKey: .screenUsageSessions)) ?? nil
     }
 }

@@ -19,6 +19,7 @@ class DataStore: ObservableObject {
     @Published var trapAnalysis: TrapAnalysis? = nil
     @Published var isGeneratingTrapAnalysis = false
     @Published var trapAnalysisError: String? = nil
+    @Published var screenUsageSessions: [ScreenUsageSession] = []
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -64,6 +65,7 @@ class DataStore: ObservableObject {
         trapShootingSets = appData.trapShootingSets ?? []
         trapAnalysis = appData.trapAnalysis
         sortTrapShootingSets()
+        screenUsageSessions = appData.screenUsageSessions ?? []
         recalculateAllKPIs()
         ThemeManager.shared.applyAccent(config.accentColor)
     }
@@ -79,7 +81,7 @@ class DataStore: ObservableObject {
                 return
             }
         }
-        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions, trapShootingSets: trapShootingSets, trapAnalysis: trapAnalysis)
+        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions, trapShootingSets: trapShootingSets, trapAnalysis: trapAnalysis, screenUsageSessions: screenUsageSessions)
         guard let data = try? encoder.encode(appData) else { return }
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
@@ -561,5 +563,43 @@ class DataStore: ObservableObject {
 
     func clearTrapAnalysisError() {
         trapAnalysisError = nil
+    }
+
+    // MARK: - Screen Usage Stats
+
+    var todayScreenTime: TimeInterval {
+        let cal = Calendar.current
+        let todayStart = cal.startOfDay(for: Date())
+        return screenUsageSessions
+            .filter { $0.start >= todayStart }
+            .reduce(0) { $0 + $1.duration }
+    }
+
+    var weekScreenTime: TimeInterval {
+        let cal = Calendar.current
+        guard let weekAgo = cal.date(byAdding: .day, value: -7, to: Date()) else { return 0 }
+        return screenUsageSessions
+            .filter { $0.start >= weekAgo }
+            .reduce(0) { $0 + $1.duration }
+    }
+
+    var monthScreenTime: TimeInterval {
+        let cal = Calendar.current
+        guard let monthAgo = cal.date(byAdding: .month, value: -1, to: Date()) else { return 0 }
+        return screenUsageSessions
+            .filter { $0.start >= monthAgo }
+            .reduce(0) { $0 + $1.duration }
+    }
+
+    var allTimeScreenTime: TimeInterval {
+        screenUsageSessions.reduce(0) { $0 + $1.duration }
+    }
+
+    var currentSessionDuration: TimeInterval {
+        screenUsageSessions.last?.end == nil ? screenUsageSessions.last?.duration ?? 0 : 0
+    }
+
+    var isScreenCurrentlyOn: Bool {
+        screenUsageSessions.last?.end == nil
     }
 }
