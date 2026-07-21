@@ -119,6 +119,7 @@ struct ContentView: View {
         case journal = "Journal"
         case goals = "Goals"
         case subscriptions = "Subscriptions"
+        case trapShooting = "Trap Shooting"
 
         var icon: String {
             switch self {
@@ -130,6 +131,7 @@ struct ContentView: View {
             case .insights: return "lightbulb"
             case .goals: return "target"
             case .subscriptions: return "creditcard"
+            case .trapShooting: return "scope"
             }
         }
     }
@@ -259,6 +261,10 @@ struct ContentView: View {
 
                 SubscriptionsView()
                     .opacity(selectedTab == .subscriptions ? 1 : 0)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                TrapShootingView()
+                    .opacity(selectedTab == .trapShooting ? 1 : 0)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }

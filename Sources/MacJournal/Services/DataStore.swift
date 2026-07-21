@@ -15,6 +15,10 @@ class DataStore: ObservableObject {
     @Published var briefingError: String? = nil
     @Published var goals: [Goal] = []
     @Published var subscriptions: [Subscription] = []
+    @Published var trapShootingSets: [TrapShootingSet] = []
+    @Published var trapAnalysis: TrapAnalysis? = nil
+    @Published var isGeneratingTrapAnalysis = false
+    @Published var trapAnalysisError: String? = nil
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -57,6 +61,9 @@ class DataStore: ObservableObject {
         subscriptions = appData.subscriptions ?? []
         sortEntries()
         sortJournal()
+        trapShootingSets = appData.trapShootingSets ?? []
+        trapAnalysis = appData.trapAnalysis
+        sortTrapShootingSets()
         recalculateAllKPIs()
         ThemeManager.shared.applyAccent(config.accentColor)
     }
@@ -72,7 +79,7 @@ class DataStore: ObservableObject {
                 return
             }
         }
-        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions)
+        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions, trapShootingSets: trapShootingSets, trapAnalysis: trapAnalysis)
         guard let data = try? encoder.encode(appData) else { return }
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
@@ -496,5 +503,63 @@ class DataStore: ObservableObject {
             case .invalidDate: return "Invalid date format. Expected yyyy-MM-dd."
             }
         }
+    }
+
+    // MARK: - Trap Shooting
+
+    func addTrapShootingSet(_ set: TrapShootingSet) {
+        trapShootingSets.append(set)
+        sortTrapShootingSets()
+        save()
+    }
+
+    func updateTrapShootingSet(_ set: TrapShootingSet) {
+        guard let idx = trapShootingSets.firstIndex(where: { $0.id == set.id }) else { return }
+        trapShootingSets[idx] = set
+        sortTrapShootingSets()
+        save()
+    }
+
+    func deleteTrapShootingSet(_ set: TrapShootingSet) {
+        trapShootingSets.removeAll { $0.id == set.id }
+        save()
+    }
+
+    func deleteTrapShootingSet(id: UUID) {
+        trapShootingSets.removeAll { $0.id == id }
+        save()
+    }
+
+    private func sortTrapShootingSets() {
+        trapShootingSets.sort { $0.date > $1.date }
+    }
+
+    // MARK: - Trap Shooting Analysis
+
+    func generateTrapAnalysis() {
+        guard config.llmConfig.morningBriefingEnabled else {
+            trapAnalysisError = "LLM integration is disabled in Settings"
+            return
+        }
+        isGeneratingTrapAnalysis = true
+        trapAnalysisError = nil
+        Task {
+            let service = TrapAnalysisService()
+            do {
+                let analysis = try await service.generate(
+                    sets: trapShootingSets,
+                    llmConfig: config.llmConfig
+                )
+                trapAnalysis = analysis
+                save()
+            } catch {
+                trapAnalysisError = error.localizedDescription
+            }
+            isGeneratingTrapAnalysis = false
+        }
+    }
+
+    func clearTrapAnalysisError() {
+        trapAnalysisError = nil
     }
 }

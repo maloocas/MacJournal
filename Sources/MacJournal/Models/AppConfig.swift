@@ -58,8 +58,10 @@ struct AppData: Codable {
     var morningBriefing: MorningBriefing?
     var goals: [Goal]?
     var subscriptions: [Subscription]?
+    var trapShootingSets: [TrapShootingSet]?
+    var trapAnalysis: TrapAnalysis?
 
-    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil) {
+    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil, trapShootingSets: [TrapShootingSet]? = nil, trapAnalysis: TrapAnalysis? = nil) {
         self.entries = entries
         self.config = config
         self.journalEntries = journalEntries
@@ -68,6 +70,8 @@ struct AppData: Codable {
         self.morningBriefing = morningBriefing
         self.goals = goals
         self.subscriptions = subscriptions
+        self.trapShootingSets = trapShootingSets
+        self.trapAnalysis = trapAnalysis
     }
 
     init(from decoder: Decoder) throws {
@@ -85,5 +89,7 @@ struct AppData: Codable {
         goals = (try? container.decodeIfPresent([Goal].self, forKey: .goals)) ?? nil
         // Silently drop corrupted subscriptions — never let them sink the entire load
         subscriptions = (try? container.decodeIfPresent([Subscription].self, forKey: .subscriptions)) ?? nil
+        trapShootingSets = (try? container.decodeIfPresent([TrapShootingSet].self, forKey: .trapShootingSets)) ?? nil
+        trapAnalysis = (try? container.decodeIfPresent(TrapAnalysis.self, forKey: .trapAnalysis)) ?? nil
     }
 }

@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.0.3/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.0.5/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -86,6 +86,15 @@ Powered by an LLM backend (DeepSeek by default, configurable), generates a daily
 
 ### 🎯 Goals
 Set and track progress toward personal targets. Each active goal displays a visual progress bar driven by your logged data.
+
+### 🎯 Trap Shooting
+Log and analyze trap shooting rounds with detailed performance tracking:
+
+- **Round logging** — log each round with score (0–25), date, time of day, weather conditions, wind speed, temperature, squad size, gun, ammo, location, and competition flag
+- **Stat cards** — average score, best round, hit rate, total rounds, and best 20+ streak tracking
+- **Analytics charts** — score trend over time, score distribution histogram, 7-round rolling average, and weather impact analysis comparing average scores by condition
+- **AI coaching analysis** — generates an LLM-powered breakdown with specific suggestions and encouragement based on your 30/90-day data, weather patterns, and performance streaks
+- **History** — searchable, filterable round history with inline edit and delete
 
 ### 💾 Data Management
 - **Auto-save** — entries persist immediately to local JSON storage with atomic writes
