@@ -6,6 +6,8 @@ struct DashboardView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
 
+    @State private var dashboardDailyGoalText = ""
+
     var body: some View {
         GeometryReader { geo in
             let avail = geo.size.width - 40
@@ -296,6 +298,8 @@ struct DashboardView: View {
                 .padding(.top, 12)
             }
 
+            dailyGoalsDashboardSection
+
             if store.checklistItems.isEmpty {
                 emptyChecklistPlaceholder
             } else {
@@ -305,20 +309,19 @@ struct DashboardView: View {
     }
 
     private var emptyChecklistPlaceholder: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "checklist")
-                .font(.system(size: 28))
-                .foregroundColor(themeManager.colors.textMuted)
-            Text("No checklist items.\nAdd some in the TD List tab.")
-                .font(.system(size: 11))
-                .foregroundColor(themeManager.colors.textSecondary)
-                .multilineTextAlignment(.center)
+        SectionBox(title: "TD List") {
+            VStack(spacing: 12) {
+                Image(systemName: "checklist")
+                    .font(.system(size: 28))
+                    .foregroundColor(themeManager.colors.textMuted)
+                Text("No checklist items.\nAdd some in the TD List tab.")
+                    .font(.system(size: 12))
+                    .foregroundColor(themeManager.colors.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 48)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var checklistContent: some View {
@@ -328,7 +331,7 @@ struct DashboardView: View {
                 let perItems = store.checklistItems.filter { $0.section == .personal }
 
                 if !proItems.isEmpty {
-                    sectionBox(title: "Professional (\(proItems.count))") {
+                    SectionBox(title: "Professional (\(proItems.count))") {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(proItems.enumerated()), id: \.element.id) { idx, item in
                                 ChecklistItemRow(
@@ -346,7 +349,7 @@ struct DashboardView: View {
                 }
 
                 if !perItems.isEmpty {
-                    sectionBox(title: "Personal & Academic (\(perItems.count))") {
+                    SectionBox(title: "Personal & Academic (\(perItems.count))") {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(perItems.enumerated()), id: \.element.id) { idx, item in
                                 ChecklistItemRow(
@@ -364,25 +367,79 @@ struct DashboardView: View {
                 }
             }
         }
-        .padding(20)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    @ViewBuilder
-    private func sectionBox(title: String, @ViewBuilder content: () -> some View) -> some View {
-        let c = themeManager.colors
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(title)
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(c.accent)
-                    .textCase(.uppercase)
-                    .tracking(0.8)
-                Spacer()
+    private var dailyGoalsDashboardSection: some View {
+        let todayGoals = store.todayDailyGoals
+        return SectionBox(title: "Daily Goals (\(todayGoals.count)/\(DailyGoal.maxPerDay))") {
+            VStack(spacing: 0) {
+                ForEach(Array(todayGoals.enumerated()), id: \.element.id) { idx, goal in
+                    DailyGoalRow(
+                        goal: goal,
+                        onToggle: { store.toggleDailyGoal(id: goal.id) },
+                        onDelete: { store.deleteDailyGoal(id: goal.id) },
+                        onEdit: nil
+                    )
+                    if idx < todayGoals.count - 1 {
+                        Divider().overlay(themeManager.colors.borderFaint)
+                    }
+                }
+
+                if todayGoals.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "target")
+                            .font(.system(size: 28))
+                            .foregroundColor(themeManager.colors.textMuted)
+                        Text("No daily goals yet.\nAdd 1-5 goals for today.")
+                            .font(.system(size: 12))
+                            .foregroundColor(themeManager.colors.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 48)
+                }
+
+                if todayGoals.count < DailyGoal.maxPerDay {
+                    if !todayGoals.isEmpty {
+                        Divider().overlay(themeManager.colors.borderFaint)
+                    }
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 13))
+                            .foregroundColor(themeManager.colors.accent.opacity(0.6))
+
+                        TextField("Add daily goal...", text: $dashboardDailyGoalText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 13))
+                            .foregroundColor(themeManager.colors.textPrimary)
+                            .onSubmit {
+                                let trimmed = dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                guard !trimmed.isEmpty else { return }
+                                store.addDailyGoal(text: trimmed)
+                                dashboardDailyGoalText = ""
+                            }
+
+                        Button(action: {
+                            let trimmed = dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            store.addDailyGoal(text: trimmed)
+                            dashboardDailyGoalText = ""
+                        }) {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(
+                                    dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                        ? themeManager.colors.textMuted
+                                        : themeManager.colors.accent
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 4)
+                }
             }
-            content()
         }
     }
 
@@ -750,7 +807,9 @@ struct EmptyChartSkeleton: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(themeManager.colors.textMuted),
                 at: center
-            )
+        )
         }
     }
 }
+
+

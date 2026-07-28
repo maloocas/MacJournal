@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.0.6/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.1.0/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -96,14 +96,13 @@ Log and analyze trap shooting rounds with detailed performance tracking:
 - **AI coaching analysis** — generates an LLM-powered breakdown with specific suggestions and encouragement based on your 30/90-day data, weather patterns, and performance streaks
 - **History** — searchable, filterable round history with inline edit and delete
 
-### 🕵️ Not Spyware
-A joke tab that's definitely not spyware. Tracks screen-on time by monitoring display sleep/wake state:
+### 🎯 Daily Goals
+Set and track up to 5 daily goals with checkable progress:
 
-- **Live status** — shows whether the screen is currently on or off
-- **Current session timer** — real-time counter for the active screen-on session
-- **Usage stats** — screen-on time for today, this week, this month, and all time
-- **Session count** — total completed screen sessions logged
-- **Fully persistent** — sessions survive app restarts, stored alongside journal data
+- **Daily tracking** — create up to 5 goals per day, each independently checkable
+- **Date-bound** — goals are tied to specific dates for easy daily planning
+- **Persistent storage** — synced with your journal data
+- **Seamless workflow** — manage goals alongside your daily log entries
 
 ### 💾 Data Management
 - **Auto-save** — entries persist immediately to local JSON storage with atomic writes

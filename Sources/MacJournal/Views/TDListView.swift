@@ -8,11 +8,14 @@ struct TDListView: View {
 
     @State private var proNewText = ""
     @State private var perNewText = ""
+    @State private var dailyGoalText = ""
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 SectionHeader(title: "TD List")
+
+                dailyGoalsCard
 
                 progressOverviewCard
 
@@ -34,20 +37,19 @@ struct TDListView: View {
                 }
 
                 if store.checklistItems.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "checklist")
-                            .font(.system(size: 32))
-                            .foregroundColor(themeManager.colors.textMuted)
-                        Text("No checklist items yet.\nAdd some below to get started.")
-                            .font(.system(size: 12))
-                            .foregroundColor(themeManager.colors.textSecondary)
-                            .multilineTextAlignment(.center)
+                    SectionBox(title: "TD List") {
+                        VStack(spacing: 12) {
+                            Image(systemName: "checklist")
+                                .font(.system(size: 32))
+                                .foregroundColor(themeManager.colors.textMuted)
+                            Text("No checklist items yet.\nAdd some below to get started.")
+                                .font(.system(size: 12))
+                                .foregroundColor(themeManager.colors.textSecondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 48)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 48)
-            .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 let proItems = store.checklistItems.filter { $0.section == .professional }
@@ -101,6 +103,86 @@ struct TDListView: View {
         }
         .background(themeManager.colors.background)
 
+    }
+
+    // MARK: - Daily Goals Card
+
+    private var dailyGoalsCard: some View {
+        let todayGoals = store.todayDailyGoals
+        return SectionBox(title: "Daily Goals (\(todayGoals.count)/\(DailyGoal.maxPerDay))") {
+            VStack(spacing: 0) {
+                ForEach(Array(todayGoals.enumerated()), id: \.element.id) { idx, goal in
+                    DailyGoalRow(
+                        goal: goal,
+                        onToggle: { store.toggleDailyGoal(id: goal.id) },
+                        onDelete: { store.deleteDailyGoal(id: goal.id) },
+                        onEdit: { newText in store.updateDailyGoalText(id: goal.id, text: newText) }
+                    )
+                    if idx < todayGoals.count - 1 {
+                        Divider().overlay(themeManager.colors.borderFaint)
+                    }
+                }
+
+                if todayGoals.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "target")
+                            .font(.system(size: 32))
+                            .foregroundColor(themeManager.colors.textMuted)
+                        Text("No daily goals yet.\nAdd 1-5 goals for today.")
+                            .font(.system(size: 12))
+                            .foregroundColor(themeManager.colors.textSecondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 48)
+                }
+
+                if todayGoals.count < DailyGoal.maxPerDay {
+                    if !todayGoals.isEmpty {
+                        Divider().overlay(themeManager.colors.borderFaint)
+                    }
+                    addDailyGoalRow
+                }
+            }
+        }
+    }
+
+    private var addDailyGoalRow: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "plus.circle")
+                .font(.system(size: 13))
+                .foregroundColor(themeManager.colors.accent.opacity(0.6))
+
+            TextField("Add daily goal...", text: $dailyGoalText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundColor(themeManager.colors.textPrimary)
+                .onSubmit {
+                    let trimmed = dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    store.addDailyGoal(text: trimmed)
+                    dailyGoalText = ""
+                }
+
+            Button(action: {
+                let trimmed = dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                store.addDailyGoal(text: trimmed)
+                dailyGoalText = ""
+            }) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(
+                        dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? themeManager.colors.textMuted
+                            : themeManager.colors.accent
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Progress Overview Card
@@ -372,6 +454,114 @@ struct ChecklistItemRow: View {
     private func commitEdit() {
         let trimmed = editedText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, trimmed != item.text else {
+            isEditing = false
+            return
+        }
+        isEditing = false
+        onEdit?(trimmed)
+    }
+}
+
+// MARK: - Daily Goal Row (with edit + delete)
+
+struct DailyGoalRow: View {
+    @EnvironmentObject var themeManager: ThemeManager
+    let goal: DailyGoal
+    let onToggle: () -> Void
+    var onDelete: (() -> Void)?
+    var onEdit: ((String) -> Void)?
+
+    @State private var isEditing = false
+    @State private var editedText = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Button(action: onToggle) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 3)
+                            .stroke(
+                                goal.isChecked ? color : themeManager.colors.textMuted,
+                                lineWidth: 1.5
+                            )
+                            .frame(width: 18, height: 18)
+                            .background(
+                                goal.isChecked ? color.opacity(0.15) : Color.clear
+                            )
+
+                        if goal.isChecked {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(color)
+                        }
+                    }
+
+                    if isEditing {
+                        TextField("Goal text", text: $editedText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(themeManager.colors.textPrimary)
+                            .focused($isFocused)
+                            .onSubmit { commitEdit() }
+                            .onAppear {
+                                editedText = goal.text
+                                isFocused = true
+                            }
+                    } else {
+                        Text(goal.text)
+                            .font(.system(size: 13, weight: goal.isChecked ? .regular : .medium))
+                            .foregroundColor(
+                                goal.isChecked ? themeManager.colors.textMuted : themeManager.colors.textPrimary
+                            )
+                            .strikethrough(goal.isChecked, color: themeManager.colors.textMuted)
+                    }
+
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if onEdit != nil {
+                Button(action: {
+                    if isEditing {
+                        commitEdit()
+                    } else {
+                        editedText = goal.text
+                        isEditing = true
+                        isFocused = true
+                    }
+                }) {
+                    Image(systemName: isEditing ? "checkmark.circle" : "pencil")
+                        .font(.system(size: 12))
+                        .foregroundColor(isEditing ? color : themeManager.colors.textMuted)
+                }
+                .buttonStyle(.plain)
+                .help(isEditing ? "Save" : "Edit")
+            }
+
+            if onDelete != nil {
+                Button(action: { onDelete?() }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12))
+                        .foregroundColor(themeManager.colors.textMuted.opacity(0.7))
+                }
+                .buttonStyle(.plain)
+                .help("Delete")
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 4)
+    }
+
+    private var color: Color {
+        themeManager.colors.accent
+    }
+
+    private func commitEdit() {
+        let trimmed = editedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != goal.text else {
             isEditing = false
             return
         }

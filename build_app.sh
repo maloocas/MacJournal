@@ -5,7 +5,8 @@
 
 set -euo pipefail
 
-PROJECT_DIR="$HOME/AI Projects (Coding)/MacJournal"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
 APP_NAME="MacJournal"
 BUILD_DIR="$PROJECT_DIR/.build"
 APP_BUNDLE="$PROJECT_DIR/$APP_NAME.app"
@@ -58,9 +59,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'PLIST'
     <key>CFBundleName</key>
     <string>MacJournal</string>
     <key>CFBundleVersion</key>
-    <string>1.0.3</string>
+    <string>1.1.0</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.3</string>
+    <string>1.1.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>
