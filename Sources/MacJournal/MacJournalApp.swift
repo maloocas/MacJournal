@@ -15,7 +15,14 @@ struct MacJournalApp: App {
                 .environmentObject(themeManager)
                 .preferredColorScheme(.dark)
                 .onAppear {
-                    NSApp.windows.forEach { $0.backgroundColor = NSColor(white: 0.04, alpha: 1) }
+                    // Enforce GPU-accelerated layer backing for all windows
+                    NSApp.windows.forEach { window in
+                        window.backgroundColor = NSColor(white: 0.04, alpha: 1)
+                        window.contentView?.wantsLayer = true
+                        window.contentView?.canDrawSubviewsIntoLayer = true
+                        // Keep the window smooth during live resize
+                        window.preservesContentDuringLiveResize = true
+                    }
                 }
         }
         .windowStyle(.titleBar)
@@ -230,44 +237,9 @@ struct ContentView: View {
             .onAppear { entryCount = store.entries.count }
 
             // --- Tab Content ---
-            ZStack {
-                DashboardView()
-                    .opacity(selectedTab == .dashboard ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                TDListView()
-                    .opacity(selectedTab == .tdList ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                JournalView()
-                    .opacity(selectedTab == .journal ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                DailyLogView(isVisible: selectedTab == .dailyLog)
-                    .opacity(selectedTab == .dailyLog ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                StatsView()
-                    .opacity(selectedTab == .stats ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                InsightsView()
-                    .opacity(selectedTab == .insights ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                GoalsView()
-                    .opacity(selectedTab == .goals ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                SubscriptionsView()
-                    .opacity(selectedTab == .subscriptions ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                TrapShootingView()
-                    .opacity(selectedTab == .trapShooting ? 1 : 0)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            }
+            tabContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .animation(.snappy(duration: 0.35), value: selectedTab)
         }
         .frame(minWidth: 1000, minHeight: 500)
         .background(themeManager.colors.background)
@@ -275,6 +247,41 @@ struct ContentView: View {
             if showSettingsPopup {
                 settingsPopupOverlay
             }
+        }
+    }
+
+    // MARK: - Tab Content (lazy rendering)
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .dashboard:
+            DashboardView()
+                .transition(.opacity)
+        case .tdList:
+            TDListView()
+                .transition(.opacity)
+        case .journal:
+            JournalView()
+                .transition(.opacity)
+        case .dailyLog:
+            DailyLogView(isVisible: true)
+                .transition(.opacity)
+        case .stats:
+            StatsView()
+                .transition(.opacity)
+        case .insights:
+            InsightsView()
+                .transition(.opacity)
+        case .goals:
+            GoalsView()
+                .transition(.opacity)
+        case .subscriptions:
+            SubscriptionsView()
+                .transition(.opacity)
+        case .trapShooting:
+            TrapShootingView()
+                .transition(.opacity)
         }
     }
 

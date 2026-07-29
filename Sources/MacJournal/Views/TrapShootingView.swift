@@ -434,6 +434,7 @@ struct TrapShootingView: View {
             }
             .chartPlotStyle { $0.background(.clear) }
             .frame(height: 150)
+            .drawingGroup()
         }
     }
 
@@ -497,6 +498,7 @@ struct TrapShootingView: View {
             .chartYScale(domain: 0...25)
             .chartPlotStyle { $0.background(.clear) }
             .frame(height: 150)
+            .drawingGroup()
         }
     }
 

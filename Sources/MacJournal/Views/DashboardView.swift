@@ -8,22 +8,31 @@ struct DashboardView: View {
 
     @State private var dashboardDailyGoalText = ""
 
+    @State private var weekEntries: [Entry] = []
+    @State private var avgTDI: Double = 0
+    @State private var avgEfficiency: Double = 0
+    @State private var avgFocusRatio: Double = 0
+    @State private var avgSleep: Double = 0
+    @State private var avgReading: Double = 0
+    @State private var avgSocial: Double = 0
+    @State private var meditationStreak: Int = 0
+    @State private var readingStreak: Int = 0
+    @State private var pastWeekEntries: [Entry] = []
+
     var body: some View {
-        GeometryReader { geo in
-            let avail = geo.size.width - 40
-            HStack(alignment: .top, spacing: 20) {
-                leftColumn
-                    .frame(width: avail * 0.25)
-
-                middleColumn
-                    .frame(width: avail * 0.50)
-
-                rightColumn
-                    .frame(width: avail * 0.25)
-            }
+        HStack(alignment: .top, spacing: 20) {
+            leftColumn
+                .frame(minWidth: 0, maxWidth: .infinity)
+            middleColumn
+                .frame(minWidth: 0, maxWidth: .infinity)
+            rightColumn
+                .frame(minWidth: 0, maxWidth: .infinity)
         }
+
         .padding(20)
         .background(themeManager.colors.background)
+        .onAppear(perform: recomputeMetrics)
+        .onReceive(store.$entries) { _ in recomputeMetrics() }
     }
 
     // MARK: - Left Column (KPI Wall)
@@ -160,46 +169,39 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - 7-Day Averages
+    // MARK: - Metric Recompute
 
-    private var weekEntries: [Entry] {
+    private func recomputeMetrics() {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today) else { return [] }
-        return store.entries.filter { entry in
+        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today) else { return }
+        let entries = store.entries.filter { entry in
             let day = calendar.startOfDay(for: entry.date)
             return day >= sevenDaysAgo && day < today
         }
-    }
+        weekEntries = entries
+        pastWeekEntries = entries
 
-    private var avgTDI: Double {
-        let vals = weekEntries.compactMap { $0.kpis?.tdi }.map(Double.init)
-        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
-    }
+        let tdiVals = entries.compactMap { $0.kpis?.tdi }.map(Double.init)
+        avgTDI = tdiVals.isEmpty ? 0 : tdiVals.reduce(0, +) / Double(tdiVals.count)
 
-    private var avgEfficiency: Double {
-        let vals = weekEntries.compactMap { $0.kpis?.efficiency }.map(Double.init)
-        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
-    }
+        let effVals = entries.compactMap { $0.kpis?.efficiency }.map(Double.init)
+        avgEfficiency = effVals.isEmpty ? 0 : effVals.reduce(0, +) / Double(effVals.count)
 
-    private var avgFocusRatio: Double {
-        let vals = weekEntries.compactMap { $0.kpis?.focusRatio }
-        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
-    }
+        let focusVals = entries.compactMap { $0.kpis?.focusRatio }
+        avgFocusRatio = focusVals.isEmpty ? 0 : focusVals.reduce(0, +) / Double(focusVals.count)
 
-    private var avgSleep: Double {
-        let vals = weekEntries.map { $0.sleepHours }
-        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
-    }
+        let sleepVals = entries.map { $0.sleepHours }
+        avgSleep = sleepVals.isEmpty ? 0 : sleepVals.reduce(0, +) / Double(sleepVals.count)
 
-    private var avgReading: Double {
-        let vals = weekEntries.map { Double($0.readingPages) }
-        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
-    }
+        let readVals = entries.map { Double($0.readingPages) }
+        avgReading = readVals.isEmpty ? 0 : readVals.reduce(0, +) / Double(readVals.count)
 
-    private var avgSocial: Double {
-        let vals = weekEntries.map { Double($0.socialMins) }
-        return vals.isEmpty ? 0 : vals.reduce(0, +) / Double(vals.count)
+        let socialVals = entries.map { Double($0.socialMins) }
+        avgSocial = socialVals.isEmpty ? 0 : socialVals.reduce(0, +) / Double(socialVals.count)
+
+        meditationStreak = computeStreak { $0.meditated }
+        readingStreak = computeStreak { $0.readingPages >= store.config.readingTarget }
     }
 
     private func deltaString(today: Double, avg: Double, inverted: Bool = false) -> String? {
@@ -245,15 +247,7 @@ struct DashboardView: View {
 
     // MARK: - Streaks
 
-    private var meditationStreak: Int {
-        streakCount { $0.meditated }
-    }
-
-    private var readingStreak: Int {
-        streakCount { $0.readingPages >= store.config.readingTarget }
-    }
-
-    private func streakCount(matches: (Entry) -> Bool) -> Int {
+    private func computeStreak(matches: (Entry) -> Bool) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let sorted = store.entries
@@ -521,16 +515,6 @@ struct DashboardView: View {
 
     // MARK: - Diet Helpers
 
-    private var pastWeekEntries: [Entry] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today) else { return [] }
-        return store.entries.filter { entry in
-            let day = calendar.startOfDay(for: entry.date)
-            return day >= sevenDaysAgo && day < today
-        }
-    }
-
     private func dietDistribution(from entries: [Entry]) -> [(label: String, value: Double, color: Color)] {
         var counts: [String: Double] = [:]
         for entry in entries {
@@ -616,7 +600,6 @@ struct CompactKpiCard: View {
                         RoundedRectangle(cornerRadius: 2)
                             .fill(c.borderFaint)
                             .frame(height: 3)
-
                         RoundedRectangle(cornerRadius: 2)
                             .fill(accent)
                             .frame(width: max(3, geo.size.width * progress), height: 3)
@@ -628,15 +611,14 @@ struct CompactKpiCard: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(
+        .background {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(c.surface)
-        )
-        .overlay(
+        }
+        .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(c.border, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
     }
 }
 
@@ -660,9 +642,14 @@ struct EmptyCompactKpiCard: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(c.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(c.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(c.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(c.border, lineWidth: 1)
+        }
     }
 }
 
@@ -698,13 +685,18 @@ struct StreakCard: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(c.surface))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(c.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(c.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(c.border, lineWidth: 1)
+        }
     }
 }
 
-// MARK: - Section Label (compact, KPI column)
+// MARK: - KPI Section Label
 
 struct KpiSectionLabel: View {
     @EnvironmentObject var themeManager: ThemeManager
@@ -743,9 +735,14 @@ struct ChartBox<Content: View>: View {
             content
         }
         .padding(.vertical, 16)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
 }
 
@@ -768,9 +765,14 @@ struct EmptyChartBox: View {
                 .padding()
         }
         .padding(.vertical, 16)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
 }
 

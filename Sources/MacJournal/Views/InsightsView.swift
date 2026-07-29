@@ -295,12 +295,19 @@ struct InsightsView: View {
     // MARK: - Refresh
 
     private func refresh() {
-        let newReport = engine.generate(from: store.entries, config: store.config)
-        withAnimation(.easeInOut(duration: 0.3)) {
-            report = newReport
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            withAnimation { showCards = true }
+        let entries = store.entries
+        let config = store.config
+        let eng = engine
+        DispatchQueue.global(qos: .userInitiated).async {
+            let newReport = eng.generate(from: entries, config: config)
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.report = newReport
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation { self.showCards = true }
+                }
+            }
         }
     }
 
@@ -386,9 +393,14 @@ struct InsightCardView: View {
             Spacer()
         }
         .padding(16)
-.background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
 
     private var severityDotColor: Color {

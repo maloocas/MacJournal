@@ -106,13 +106,18 @@ struct GlassLineChart: View {
                 $0.background(.clear)
             }
             .frame(height: 150)
+            .drawingGroup()
         }
         .padding(18)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
-
     private func formattedValue(_ v: Double) -> String {
         if v == floor(v) { return String(format: "%.0f", v) }
         return String(format: "%.1f", v)
@@ -210,18 +215,24 @@ struct GlassStepChart: View {
             .chartYScale(domain: -0.1...1.1)
             .chartPlotStyle { $0.background(.clear) }
             .frame(height: 150)
+            .drawingGroup()
         }
         .padding(18)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
 }
 
 // MARK: - Data Model
 
 struct TrendPoint: Identifiable {
-    let id = UUID()
+    var id: Double { date.timeIntervalSince1970 }
     let date: Date
     let value: Double
 

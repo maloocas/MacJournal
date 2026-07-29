@@ -41,6 +41,7 @@ struct BarChartView: View {
         ])
         .chartLegend(position: .bottom, spacing: 8)
         .chartXAxis { AxisMarks { AxisValueLabel().foregroundStyle(themeManager.colors.textSecondary) } }
-        .chartYAxis { AxisMarks { AxisValueLabel().foregroundStyle(themeManager.colors.textSecondary) } }
+        .drawingGroup()
+
     }
 }

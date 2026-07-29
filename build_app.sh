@@ -59,14 +59,16 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<'PLIST'
     <key>CFBundleName</key>
     <string>MacJournal</string>
     <key>CFBundleVersion</key>
-    <string>1.1.0</string>
+    <string>1.1.1</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.0</string>
+    <string>1.1.1</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
     <true/>
     <key>NSAppTransportSecurity</key>
     <dict>

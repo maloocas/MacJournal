@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.1.0/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.1.1/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -201,3 +201,16 @@ If you were using the earlier web-based version of MacJournal:
 ## License
 
 MIT — see [LICENSE](LICENSE) for details.
+
+---
+
+## Changelog
+
+### v1.1.1 — Performance Fixes
+- Performance optimizations across chart rendering, KPI computation, and data persistence
+- Various bug fixes and stability improvements
+
+### v1.1.0
+- Removed ScreenTracker for improved performance and battery life
+- Daily Goals feature — set and track up to 5 daily goals
+- Revamped TD List with dual-section progress tracking

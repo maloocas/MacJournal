@@ -103,14 +103,19 @@ struct HourlyCheckoffChart: View {
                     }
                 }
                 .chartPlotStyle { $0.background(.clear) }
-                .frame(height: 150)
+                .drawingGroup()
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
             }
         }
         .padding(18)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
 }

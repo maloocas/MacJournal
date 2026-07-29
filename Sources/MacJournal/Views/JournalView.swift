@@ -108,8 +108,13 @@ struct JournalCard: View {
             }
         }
         .padding(18)
-        .background(themeManager.colors.surface)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.colors.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(themeManager.colors.border, lineWidth: 1)
+        }
     }
 }

@@ -11,8 +11,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - Public API
 
-    /// Generate insights from the full entry history.
-    func generate(from entries: [Entry], config: AppConfig) -> InsightsReport {
+    nonisolated func generate(from entries: [Entry], config: AppConfig) -> InsightsReport {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
@@ -79,7 +78,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - 1. Trends
 
-    private func computeTrends(thisWeek: [Entry], lastWeek: [Entry]) -> [InsightCard] {
+    nonisolated private func computeTrends(thisWeek: [Entry], lastWeek: [Entry]) -> [InsightCard] {
         var cards: [InsightCard] = []
 
         let metrics: [(String, (Entry) -> Double, String, Bool)] = [
@@ -128,7 +127,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - 2. Goal Attainment
 
-    private func computeGoals(thisWeek: [Entry], config: AppConfig) -> [InsightCard] {
+    nonisolated private func computeGoals(thisWeek: [Entry], config: AppConfig) -> [InsightCard] {
         var cards: [InsightCard] = []
 
         let readingDays = thisWeek.filter { $0.readingPages >= config.readingTarget }.count
@@ -179,7 +178,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - 3. Pattern Detection
 
-    private func computePatterns(entries: [Entry]) -> [InsightCard] {
+    nonisolated private func computePatterns(entries: [Entry]) -> [InsightCard] {
         var cards: [InsightCard] = []
         let calendar = Calendar.current
 
@@ -264,7 +263,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - 4. Anomaly Detection
 
-    private func computeAnomalies(entries: [Entry]) -> [InsightCard] {
+    nonisolated private func computeAnomalies(entries: [Entry]) -> [InsightCard] {
         var cards: [InsightCard] = []
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE M/d"
@@ -321,7 +320,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - 5. Week-over-Week Comparisons
 
-    private func computeComparisons(thisWeek: [Entry], lastWeek: [Entry]) -> [InsightCard] {
+    nonisolated private func computeComparisons(thisWeek: [Entry], lastWeek: [Entry]) -> [InsightCard] {
         var cards: [InsightCard] = []
 
         let metrics: [(String, (Entry) -> Double, String)] = [
@@ -369,7 +368,7 @@ class InsightsEngine: ObservableObject {
 
     // MARK: - Helpers
 
-    private func unit(for metric: String) -> String {
+    nonisolated private func unit(for metric: String) -> String {
         switch metric {
         case "Sleep Hours", "Sleep": return "h"
         case "Social Media (min)", "Social Media": return "m"
