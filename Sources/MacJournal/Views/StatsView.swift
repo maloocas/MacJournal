@@ -11,7 +11,7 @@ struct StatsView: View {
 
     @State private var recentEntries: [Entry] = []
     @State private var chartData: [ChartDataItem] = []
-    @State private var tdCheckoffEvents: [TDCheckoffEvent] = []
+    @State private var tdCheckoffEvents: [TDCheckoffEvent] = [] // [TDList]
 
     struct ChartDataItem: Identifiable {
         let id: String
@@ -50,7 +50,7 @@ struct StatsView: View {
         }
         .background(themeManager.colors.background)
         .onReceive(store.$entries) { _ in refreshChartData() }
-        .onReceive(store.$tdCheckoffEvents) { _ in refreshChartData() }
+        .onReceive(store.$tdCheckoffEvents) { _ in refreshChartData() } // [TDList]
     }
 
     private func refreshChartData() {
@@ -68,9 +68,9 @@ struct StatsView: View {
             ChartDataItem(id: "tasks", data: entries.map { TrendPoint(date: $0.date, value: Double($0.proDone + $0.perDone)) }, title: "Tasks Completed", subtitle: "Total done per day", lineColor: colors.tasks, yAxisDomain: nil, isStep: false),
         ]
 
-        if store.config.tdCheckoffTracking {
-            let eventsCutoff = Calendar.current.date(byAdding: .day, value: -store.config.statsWindowDays, to: Date())!
-            tdCheckoffEvents = store.tdCheckoffEvents.filter { $0.timestamp >= eventsCutoff }
+        if store.config.tdCheckoffTracking { // [TDList]
+            let eventsCutoff = Calendar.current.date(byAdding: .day, value: -store.config.statsWindowDays, to: Date())! // [TDList]
+            tdCheckoffEvents = store.tdCheckoffEvents.filter { $0.timestamp >= eventsCutoff } // [TDList]
         }
 
         chartData = items
@@ -138,8 +138,8 @@ struct StatsView: View {
                     }
                 }
 
-                if !tdCheckoffEvents.isEmpty {
-                    HourlyCheckoffChart(events: tdCheckoffEvents)
+                if !tdCheckoffEvents.isEmpty { // [TDList]
+                    HourlyCheckoffChart(events: tdCheckoffEvents) // [TDList]
                 }
             }
         }

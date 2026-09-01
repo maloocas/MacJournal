@@ -9,6 +9,7 @@ struct TDListView: View {
     @State private var proNewText = ""
     @State private var perNewText = ""
     @State private var dailyGoalText = ""
+    @State private var showClearAllConfirm = false
 
     var body: some View {
         ScrollView {
@@ -33,7 +34,30 @@ struct TDListView: View {
                         Text("\(store.checklistItems.count) items")
                             .font(.system(size: 11))
                             .foregroundColor(themeManager.colors.textMuted)
+
+                        Button(action: { showClearAllConfirm = true }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11))
+                                Text("Clear All")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(themeManager.colors.surface)
+                            .foregroundColor(themeManager.colors.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Remove all checklist items")
                     }
+                }
+                .confirmationDialog("Clear all checklist items?", isPresented: $showClearAllConfirm, titleVisibility: .visible) {
+                    Button("Clear All", role: .destructive) {
+                        store.clearAllChecklistItems()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This removes every item from both sections. This cannot be undone.")
                 }
 
                 if store.checklistItems.isEmpty {

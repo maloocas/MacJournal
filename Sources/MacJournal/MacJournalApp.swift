@@ -109,7 +109,7 @@ struct ContentView: View {
     @State private var settingsSleepMin: Double = 7.0
     @State private var settingsSleepMax: Double = 9.0
     @State private var settingsSleepPenalty: Double = 6.0
-    @State private var settingsTDCheckoffTracking = false
+    @State private var settingsTDCheckoffTracking = false // [TDList]
     @State private var settingsStatsWindowDays: Int = 30
     @State private var settingsMorningBriefingEnabled = false
     @State private var settingsLLMApiKey = ""
@@ -120,7 +120,7 @@ struct ContentView: View {
     enum Tab: String, CaseIterable {
         case dashboard = "Dashboard"
         case dailyLog = "Daily Log"
-        case tdList = "TD List"
+        case tdList = "TD List" // [TDList]
         case stats = "Stats"
         case insights = "Insights"
         case journal = "Journal"
@@ -131,7 +131,7 @@ struct ContentView: View {
         var icon: String {
             switch self {
             case .dashboard: return "square.grid.2x2"
-            case .tdList: return "checklist.unchecked"
+            case .tdList: return "checklist.unchecked" // [TDList]
             case .journal: return "book.pages"
             case .dailyLog: return "square.and.pencil"
             case .stats: return "chart.xyaxis.line"
@@ -258,9 +258,9 @@ struct ContentView: View {
         case .dashboard:
             DashboardView()
                 .transition(.opacity)
-        case .tdList:
-            TDListView()
-                .transition(.opacity)
+        case .tdList: // [TDList]
+            TDListView() // [TDList]
+                .transition(.opacity) // [TDList]
         case .journal:
             JournalView()
                 .transition(.opacity)
@@ -342,25 +342,25 @@ struct ContentView: View {
                             accentColorPicker
                         }
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("TD LIST TRACKING")
-                                .font(.system(size: 10, weight: .semibold))
-                                .tracking(2)
-                                .foregroundColor(themeManager.colors.textSecondary)
-                                .padding(.horizontal, 20)
+                        VStack(alignment: .leading, spacing: 8) { // [TDList]
+                            Text("TD LIST TRACKING") // [TDList]
+                                .font(.system(size: 10, weight: .semibold)) // [TDList]
+                                .tracking(2) // [TDList]
+                                .foregroundColor(themeManager.colors.textSecondary) // [TDList]
+                                .padding(.horizontal, 20) // [TDList]
 
-                            Toggle(isOn: $settingsTDCheckoffTracking) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Track Check-Off Timestamps")
-                                        .font(.system(size: 12, weight: .semibold))
-                                    Text("Record when items are checked/unchecked for future analytics")
-                                        .font(.system(size: 10))
-                                        .foregroundColor(themeManager.colors.textMuted)
+                            Toggle(isOn: $settingsTDCheckoffTracking) { // [TDList]
+                                VStack(alignment: .leading, spacing: 2) { // [TDList]
+                                    Text("Track Check-Off Timestamps") // [TDList]
+                                        .font(.system(size: 12, weight: .semibold)) // [TDList]
+                                    Text("Record when items are checked/unchecked for future analytics") // [TDList]
+                                        .font(.system(size: 10)) // [TDList]
+                                        .foregroundColor(themeManager.colors.textMuted) // [TDList]
                                 }
                             }
-                            .toggleStyle(.switch)
-                            .tint(themeManager.colors.accent)
-                            .padding(.horizontal, 20)
+                            .toggleStyle(.switch) // [TDList]
+                            .tint(themeManager.colors.accent) // [TDList]
+                            .padding(.horizontal, 20) // [TDList]
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
@@ -564,7 +564,7 @@ struct ContentView: View {
         settingsSleepMin = store.config.sleepMin
         settingsSleepMax = store.config.sleepMax
         settingsSleepPenalty = store.config.sleepPenaltyThreshold
-        settingsTDCheckoffTracking = store.config.tdCheckoffTracking
+        settingsTDCheckoffTracking = store.config.tdCheckoffTracking // [TDList]
         settingsStatsWindowDays = store.config.statsWindowDays
         settingsMorningBriefingEnabled = store.config.llmConfig.morningBriefingEnabled
         settingsLLMApiKey = store.config.llmConfig.apiKey
@@ -583,7 +583,7 @@ struct ContentView: View {
             sleepMin: max(0, settingsSleepMin),
             sleepMax: max(settingsSleepMin, settingsSleepMax),
             sleepPenaltyThreshold: max(0, min(settingsSleepPenalty, settingsSleepMin)),
-            tdCheckoffTracking: settingsTDCheckoffTracking,
+            tdCheckoffTracking: settingsTDCheckoffTracking, // [TDList]
             statsWindowDays: max(1, settingsStatsWindowDays),
             accentColor: settingsAccentColor,
             llmConfig: llmConfig

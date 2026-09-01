@@ -321,21 +321,21 @@ struct DailyLogView: View {
         return f.string(from: date)
     }
 
-    private func syncChecklistCounts() {
-        let proItems = store.checklistItems.filter { $0.section == .professional }
-        let perItems = store.checklistItems.filter { $0.section == .personal }
-        proTotal = proItems.count
-        proDone = proItems.filter { $0.isChecked }.count
-        perTotal = perItems.count
-        perDone = perItems.filter { $0.isChecked }.count
+    private func syncChecklistCounts() { // [TDList]
+        let proItems = store.checklistItems.filter { $0.section == .professional } // [TDList]
+        let perItems = store.checklistItems.filter { $0.section == .personal } // [TDList]
+        proTotal = proItems.count // [TDList]
+        proDone = proItems.filter { $0.isChecked }.count // [TDList]
+        perTotal = perItems.count // [TDList]
+        perDone = perItems.filter { $0.isChecked }.count // [TDList]
     }
 
     // MARK: - Load existing entry for the selected date
 
     private func loadEntryForDate() {
-        // Auto-sync checklist counts for today (TD List is source of truth)
-        if Calendar.current.isDate(logDate, inSameDayAs: Date()) {
-            syncChecklistCounts()
+        // Auto-sync checklist counts for today (TD List is source of truth) // [TDList]
+        if Calendar.current.isDate(logDate, inSameDayAs: Date()) { // [TDList]
+            syncChecklistCounts() // [TDList]
         }
 
         if let existing = store.entries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: logDate) }) {

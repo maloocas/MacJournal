@@ -8,7 +8,7 @@ struct AppConfig: Codable {
     var sleepMin: Double = 7.0
     var sleepMax: Double = 9.0
     var sleepPenaltyThreshold: Double = 6.0
-    var tdCheckoffTracking: Bool = false
+    var tdCheckoffTracking: Bool = false // [TDList]
     var statsWindowDays: Int = 30
     var accentColor: String = "blue"
     var llmConfig: LLMConfig = LLMConfig()
@@ -18,7 +18,7 @@ struct AppConfig: Codable {
          sleepMin: Double = 7.0,
          sleepMax: Double = 9.0,
          sleepPenaltyThreshold: Double = 6.0,
-         tdCheckoffTracking: Bool = false,
+         tdCheckoffTracking: Bool = false, // [TDList]
          statsWindowDays: Int = 30,
          accentColor: String = "blue",
          llmConfig: LLMConfig = LLMConfig()) {
@@ -27,7 +27,7 @@ struct AppConfig: Codable {
         self.sleepMin = sleepMin
         self.sleepMax = sleepMax
         self.sleepPenaltyThreshold = sleepPenaltyThreshold
-        self.tdCheckoffTracking = tdCheckoffTracking
+        self.tdCheckoffTracking = tdCheckoffTracking // [TDList]
         self.statsWindowDays = statsWindowDays
         self.accentColor = accentColor
         self.llmConfig = llmConfig
@@ -40,7 +40,7 @@ struct AppConfig: Codable {
         sleepMin = try container.decodeIfPresent(Double.self, forKey: .sleepMin) ?? 7.0
         sleepMax = try container.decodeIfPresent(Double.self, forKey: .sleepMax) ?? 9.0
         sleepPenaltyThreshold = try container.decodeIfPresent(Double.self, forKey: .sleepPenaltyThreshold) ?? 6.0
-        tdCheckoffTracking = try container.decodeIfPresent(Bool.self, forKey: .tdCheckoffTracking) ?? false
+        tdCheckoffTracking = try container.decodeIfPresent(Bool.self, forKey: .tdCheckoffTracking) ?? false // [TDList]
         statsWindowDays = try container.decodeIfPresent(Int.self, forKey: .statsWindowDays) ?? 30
         accentColor = try container.decodeIfPresent(String.self, forKey: .accentColor) ?? "blue"
         llmConfig = try container.decodeIfPresent(LLMConfig.self, forKey: .llmConfig) ?? LLMConfig()
@@ -53,28 +53,28 @@ struct AppData: Codable {
     var entries: [Entry]
     var config: AppConfig
     var journalEntries: [JournalEntry]?
-    var tdCheckoffEvents: [TDCheckoffEvent]?
-    var checklistItems: [ChecklistItem]?
+    var tdCheckoffEvents: [TDCheckoffEvent]? // [TDList]
+    var checklistItems: [ChecklistItem]?     // [TDList]
     var morningBriefing: MorningBriefing?
     var goals: [Goal]?
     var subscriptions: [Subscription]?
     var trapShootingSets: [TrapShootingSet]?
     var trapAnalysis: TrapAnalysis?
 
-    var dailyGoals: [DailyGoal]?
+    var dailyGoals: [DailyGoal]? // [TDList]
 
-    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil, trapShootingSets: [TrapShootingSet]? = nil, trapAnalysis: TrapAnalysis? = nil, dailyGoals: [DailyGoal]? = nil) {
+    init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil, trapShootingSets: [TrapShootingSet]? = nil, trapAnalysis: TrapAnalysis? = nil, dailyGoals: [DailyGoal]? = nil) { // [TDList]
         self.entries = entries
         self.config = config
         self.journalEntries = journalEntries
-        self.tdCheckoffEvents = tdCheckoffEvents
-        self.checklistItems = checklistItems
+        self.tdCheckoffEvents = tdCheckoffEvents // [TDList]
+        self.checklistItems = checklistItems     // [TDList]
         self.morningBriefing = morningBriefing
         self.goals = goals
         self.subscriptions = subscriptions
         self.trapShootingSets = trapShootingSets
         self.trapAnalysis = trapAnalysis
-        self.dailyGoals = dailyGoals
+        self.dailyGoals = dailyGoals // [TDList]
     }
 
     init(from decoder: Decoder) throws {
@@ -83,9 +83,9 @@ struct AppData: Codable {
         config = try container.decode(AppConfig.self, forKey: .config)
         journalEntries = try container.decodeIfPresent([JournalEntry].self, forKey: .journalEntries)
         // Silently drop corrupted checkoff events — never let them sink the entire load
-        tdCheckoffEvents = (try? container.decodeIfPresent([TDCheckoffEvent].self, forKey: .tdCheckoffEvents)) ?? nil
+        tdCheckoffEvents = (try? container.decodeIfPresent([TDCheckoffEvent].self, forKey: .tdCheckoffEvents)) ?? nil // [TDList]
         // Silently drop corrupted checklist items — never let them sink the entire load
-        checklistItems = (try? container.decodeIfPresent([ChecklistItem].self, forKey: .checklistItems)) ?? nil
+        checklistItems = (try? container.decodeIfPresent([ChecklistItem].self, forKey: .checklistItems)) ?? nil // [TDList]
         // Silently drop corrupted briefing — never let it sink the entire load
         morningBriefing = (try? container.decodeIfPresent(MorningBriefing.self, forKey: .morningBriefing)) ?? nil
         // Silently drop corrupted goals — never let them sink the entire load
@@ -94,5 +94,7 @@ struct AppData: Codable {
         subscriptions = (try? container.decodeIfPresent([Subscription].self, forKey: .subscriptions)) ?? nil
         trapShootingSets = (try? container.decodeIfPresent([TrapShootingSet].self, forKey: .trapShootingSets)) ?? nil
         trapAnalysis = (try? container.decodeIfPresent(TrapAnalysis.self, forKey: .trapAnalysis)) ?? nil
+        // Silently drop corrupted daily goals — never let them sink the entire load
+        dailyGoals = (try? container.decodeIfPresent([DailyGoal].self, forKey: .dailyGoals)) ?? nil // [TDList]
     }
 }

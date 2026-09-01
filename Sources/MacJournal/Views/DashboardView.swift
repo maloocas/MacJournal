@@ -6,7 +6,7 @@ struct DashboardView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
 
-    @State private var dashboardDailyGoalText = ""
+    @State private var dashboardDailyGoalText = "" // [TDList]
 
     @State private var weekEntries: [Entry] = []
     @State private var avgTDI: Double = 0
@@ -277,32 +277,32 @@ struct DashboardView: View {
 
     // MARK: - Middle Column (TD List)
 
-    private var middleColumn: some View {
+    private var middleColumn: some View { // [TDList]
         VStack(alignment: .leading, spacing: 16) {
-            ZStack(alignment: .topTrailing) {
-                SectionHeader(title: "TD List")
-                Button(action: { PopOutWindowManager.shared.toggle() }) {
-                    Image(systemName: "arrow.up.backward.and.arrow.down.forward")
-                        .font(.system(size: 11))
-                        .foregroundColor(themeManager.colors.textMuted)
+            ZStack(alignment: .topTrailing) { // [TDList]
+                SectionHeader(title: "TD List") // [TDList]
+                Button(action: { PopOutWindowManager.shared.toggle() }) { // [TDList]
+                    Image(systemName: "arrow.up.backward.and.arrow.down.forward") // [TDList]
+                        .font(.system(size: 11)) // [TDList]
+                        .foregroundColor(themeManager.colors.textMuted) // [TDList]
                 }
-                .buttonStyle(.plain)
-                .help("Pop out TD List")
-                .padding(.trailing, 12)
-                .padding(.top, 12)
+                .buttonStyle(.plain) // [TDList]
+                .help("Pop out TD List") // [TDList]
+                .padding(.trailing, 12) // [TDList]
+                .padding(.top, 12) // [TDList]
             }
 
-            dailyGoalsDashboardSection
+            dailyGoalsDashboardSection // [TDList]
 
-            if store.checklistItems.isEmpty {
-                emptyChecklistPlaceholder
-            } else {
-                checklistContent
+            if store.checklistItems.isEmpty { // [TDList]
+                emptyChecklistPlaceholder // [TDList]
+            } else { // [TDList]
+                checklistContent // [TDList]
             }
         }
     }
 
-    private var emptyChecklistPlaceholder: some View {
+    private var emptyChecklistPlaceholder: some View { // [TDList]
         SectionBox(title: "TD List") {
             VStack(spacing: 12) {
                 Image(systemName: "checklist")
@@ -318,7 +318,7 @@ struct DashboardView: View {
         }
     }
 
-    private var checklistContent: some View {
+    private var checklistContent: some View { // [TDList]
         ScrollView {
             VStack(spacing: 16) {
                 let proItems = store.checklistItems.filter { $0.section == .professional }
@@ -363,7 +363,7 @@ struct DashboardView: View {
         }
     }
 
-    private var dailyGoalsDashboardSection: some View {
+    private var dailyGoalsDashboardSection: some View { // [TDList]
         let todayGoals = store.todayDailyGoals
         return SectionBox(title: "Daily Goals (\(todayGoals.count)/\(DailyGoal.maxPerDay))") {
             VStack(spacing: 0) {
@@ -503,14 +503,14 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Checklist Actions
+    // MARK: - Checklist Actions // [TDList]
 
-    private func toggleItem(_ item: ChecklistItem) {
-        store.toggleChecklistItem(item)
+    private func toggleItem(_ item: ChecklistItem) { // [TDList]
+        store.toggleChecklistItem(item) // [TDList]
     }
 
-    private func deleteItem(_ item: ChecklistItem) {
-        store.deleteChecklistItem(item)
+    private func deleteItem(_ item: ChecklistItem) { // [TDList]
+        store.deleteChecklistItem(item) // [TDList]
     }
 
     // MARK: - Diet Helpers

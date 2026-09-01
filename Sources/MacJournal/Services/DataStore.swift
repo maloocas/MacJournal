@@ -8,8 +8,8 @@ class DataStore: ObservableObject {
     @Published var entries: [Entry] = []
     @Published var journalEntries: [JournalEntry] = []
     @Published var config: AppConfig = AppConfig()
-    @Published var tdCheckoffEvents: [TDCheckoffEvent] = []
-    @Published var checklistItems: [ChecklistItem] = []
+    @Published var tdCheckoffEvents: [TDCheckoffEvent] = [] // [TDList]
+    @Published var checklistItems: [ChecklistItem] = []     // [TDList]
     @Published var morningBriefing: MorningBriefing? = nil
     @Published var isGeneratingBriefing = false
     @Published var briefingError: String? = nil
@@ -20,7 +20,7 @@ class DataStore: ObservableObject {
     @Published var isGeneratingTrapAnalysis = false
     @Published var trapAnalysisError: String? = nil
 
-    @Published var dailyGoals: [DailyGoal] = []
+    @Published var dailyGoals: [DailyGoal] = [] // [TDList]
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -56,8 +56,8 @@ class DataStore: ObservableObject {
         entries = appData.entries
         journalEntries = appData.journalEntries ?? []
         config = appData.config
-        tdCheckoffEvents = appData.tdCheckoffEvents ?? []
-        checklistItems = appData.checklistItems ?? []
+        tdCheckoffEvents = appData.tdCheckoffEvents ?? [] // [TDList]
+        checklistItems = appData.checklistItems ?? []     // [TDList]
         morningBriefing = appData.morningBriefing
         goals = appData.goals ?? []
         subscriptions = appData.subscriptions ?? []
@@ -66,7 +66,7 @@ class DataStore: ObservableObject {
         trapShootingSets = appData.trapShootingSets ?? []
         trapAnalysis = appData.trapAnalysis
 
-        dailyGoals = appData.dailyGoals ?? []
+        dailyGoals = appData.dailyGoals ?? [] // [TDList]
         recalculateAllKPIs()
         ThemeManager.shared.applyAccent(config.accentColor)
     }
@@ -82,7 +82,7 @@ class DataStore: ObservableObject {
                 return
             }
         }
-        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions, trapShootingSets: trapShootingSets, trapAnalysis: trapAnalysis, dailyGoals: dailyGoals)
+        let appData = AppData(entries: entries, config: config, journalEntries: journalEntries, tdCheckoffEvents: tdCheckoffEvents, checklistItems: checklistItems, morningBriefing: morningBriefing, goals: goals, subscriptions: subscriptions, trapShootingSets: trapShootingSets, trapAnalysis: trapAnalysis, dailyGoals: dailyGoals) // [TDList]
         guard let data = try? encoder.encode(appData) else { return }
         // Atomic write: write to temp, then rename
         let tempURL = dataURL.deletingLastPathComponent().appendingPathComponent("data.json.tmp")
@@ -146,89 +146,6 @@ class DataStore: ObservableObject {
         save()
     }
 
-    // MARK: - TD Checkoff Tracking
-
-    func recordCheckoffEvent(itemText: String, section: String, action: TDCheckoffEvent.Action) {
-        guard config.tdCheckoffTracking else { return }
-        let event = TDCheckoffEvent(
-            itemText: itemText,
-            section: section,
-            action: action,
-            timestamp: Date()
-        )
-        tdCheckoffEvents.append(event)
-        save()
-    }
-
-    // MARK: - Checklist Items (Local)
-
-    func toggleChecklistItem(_ item: ChecklistItem) {
-        guard let index = checklistItems.firstIndex(where: { $0.id == item.id }) else { return }
-        checklistItems[index].isChecked.toggle()
-        updateTodayFromChecklist()
-        let newChecked = checklistItems[index].isChecked
-        let action: TDCheckoffEvent.Action = newChecked ? .checked : .unchecked
-        recordCheckoffEvent(itemText: item.text, section: item.section.rawValue, action: action)
-        save()
-    }
-
-    func addChecklistItem(section: ChecklistItem.Section, text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let newItem = ChecklistItem(section: section, text: trimmed, isChecked: false)
-        checklistItems.append(newItem)
-        updateTodayFromChecklist()
-        save()
-    }
-
-    func deleteChecklistItem(_ item: ChecklistItem) {
-        checklistItems.removeAll { $0.id == item.id }
-        updateTodayFromChecklist()
-        save()
-    }
-
-    func updateChecklistItemText(_ item: ChecklistItem, newText: String) {
-        guard let index = checklistItems.firstIndex(where: { $0.id == item.id }) else { return }
-        let trimmed = newText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        checklistItems[index].text = trimmed
-        save()
-    }
-
-    private func updateTodayFromChecklist() {
-        let proItems = checklistItems.filter { $0.section == .professional }
-        let perItems = checklistItems.filter { $0.section == .personal }
-        let proDone = proItems.filter { $0.isChecked }.count
-        let proTotal = proItems.count
-        let perDone = perItems.filter { $0.isChecked }.count
-        let perTotal = perItems.count
-
-        let today = Date()
-        if var existing = entries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
-            existing.proTotal = proTotal
-            existing.proDone = proDone
-            existing.perTotal = perTotal
-            existing.perDone = perDone
-            addOrUpdate(entry: &existing)
-        } else if !checklistItems.isEmpty {
-            var newEntry = Entry(
-                date: today,
-                sleepHours: 7.0,
-                socialMins: 0,
-                breakfast: .standard,
-                lunch: .standard,
-                dinner: .standard,
-                proTotal: proTotal,
-                proDone: proDone,
-                perTotal: perTotal,
-                perDone: perDone,
-                readingPages: 0,
-                meditated: false
-            )
-            addOrUpdate(entry: &newEntry)
-        }
-    }
-
     // MARK: - Goals
 
     func addGoal(text: String, dueDate: Date? = nil) {
@@ -250,42 +167,6 @@ class DataStore: ObservableObject {
 
     func deleteGoal(id: UUID) {
         goals.removeAll { $0.id == id }
-        save()
-    }
-
-    // MARK: - Daily Goals
-
-    var todayDailyGoals: [DailyGoal] {
-        let cal = Calendar.current
-        let todayStart = cal.startOfDay(for: Date())
-        return dailyGoals.filter { cal.startOfDay(for: $0.date) == todayStart }
-    }
-
-    func addDailyGoal(text: String) {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        guard todayDailyGoals.count < DailyGoal.maxPerDay else { return }
-        let goal = DailyGoal(text: trimmed)
-        dailyGoals.append(goal)
-        save()
-    }
-
-    func toggleDailyGoal(id: UUID) {
-        guard let index = dailyGoals.firstIndex(where: { $0.id == id }) else { return }
-        dailyGoals[index].isChecked.toggle()
-        save()
-    }
-
-    func deleteDailyGoal(id: UUID) {
-        dailyGoals.removeAll { $0.id == id }
-        save()
-    }
-
-    func updateDailyGoalText(id: UUID, text: String) {
-        guard let index = dailyGoals.firstIndex(where: { $0.id == id }) else { return }
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        dailyGoals[index].text = trimmed
         save()
     }
 
