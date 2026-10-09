@@ -10,19 +10,22 @@ struct GlassLineChart: View {
     let subtitle: String
     let lineColor: Color
     let yAxisDomain: ClosedRange<Double>?
+    let xByRound: Bool
 
     init(
         data: [TrendPoint],
         title: String,
         subtitle: String = "",
         lineColor: Color,
-        yAxisDomain: ClosedRange<Double>? = nil
+        yAxisDomain: ClosedRange<Double>? = nil,
+        xByRound: Bool = false
     ) {
         self.data = data
         self.title = title
         self.subtitle = subtitle
         self.lineColor = lineColor
         self.yAxisDomain = yAxisDomain
+        self.xByRound = xByRound
     }
 
     var body: some View {
@@ -50,46 +53,11 @@ struct GlassLineChart: View {
             .padding(.horizontal, 4)
 
             // Chart
-            Chart(data) { point in
-                LineMark(
-                    x: .value("Date", point.date),
-                    y: .value("Value", point.value)
-                )
-                .foregroundStyle(lineColor)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-                .interpolationMethod(.catmullRom)
-
-                AreaMark(
-                    x: .value("Date", point.date),
-                    y: .value("Value", point.value)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            lineColor.opacity(0.18),
-                            lineColor.opacity(0.04),
-                            Color.clear
-                        ]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .interpolationMethod(.catmullRom)
-
-                PointMark(
-                    x: .value("Date", point.date),
-                    y: .value("Value", point.value)
-                )
-                .foregroundStyle(lineColor)
-                .symbolSize(data.count > 30 ? 0 : 4)
-            }
-            .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: max(1, data.count / 5))) {
-                    AxisGridLine()
-                        .foregroundStyle(themeManager.colors.chartGrid)
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
-                        .font(.system(size: 9))
-                        .foregroundStyle(themeManager.colors.textMuted)
+            Group {
+                if xByRound {
+                    roundChart
+                } else {
+                    dateChart
                 }
             }
             .chartYAxis {
@@ -102,6 +70,7 @@ struct GlassLineChart: View {
                 }
             }
             .modifier(DomainModifier(domain: yAxisDomain))
+            .chartYScale(range: .plotDimension(padding: 8))
             .chartPlotStyle {
                 $0.background(.clear)
             }
@@ -117,6 +86,69 @@ struct GlassLineChart: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(themeManager.colors.border, lineWidth: 1)
         }
+    }
+
+    // MARK: - Chart Branches
+
+    private var roundChart: some View {
+        Chart(Array(data.enumerated()), id: \.offset) { index, point in
+            marks(x: .value("Round", index + 1), value: point.value)
+        }
+        .chartXScale(domain: 1...max(1, data.count))
+        .chartXAxis {
+            AxisMarks(values: .stride(by: Double(max(1, data.count / 5)))) { value in
+                AxisGridLine()
+                    .foregroundStyle(themeManager.colors.chartGrid)
+                AxisValueLabel {
+                    if let round = value.as(Double.self) {
+                        Text("\(Int(round))")
+                            .font(.system(size: 9))
+                            .foregroundStyle(themeManager.colors.textMuted)
+                    }
+                }
+            }
+        }
+    }
+
+    private var dateChart: some View {
+        Chart(data) { point in
+            marks(x: .value("Date", point.date), value: point.value)
+        }
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .day, count: max(1, data.count / 5))) {
+                AxisGridLine()
+                    .foregroundStyle(themeManager.colors.chartGrid)
+                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                    .font(.system(size: 9))
+                    .foregroundStyle(themeManager.colors.textMuted)
+            }
+        }
+    }
+
+    @ChartContentBuilder
+    private func marks<V: Plottable>(x: PlottableValue<V>, value: Double) -> some ChartContent {
+        LineMark(x: x, y: .value("Value", value))
+            .foregroundStyle(lineColor)
+            .lineStyle(StrokeStyle(lineWidth: 2))
+            .interpolationMethod(xByRound ? .linear : .catmullRom)
+
+        AreaMark(x: x, y: .value("Value", value))
+            .foregroundStyle(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        lineColor.opacity(0.18),
+                        lineColor.opacity(0.04),
+                        Color.clear
+                    ]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .interpolationMethod(xByRound ? .linear : .catmullRom)
+
+        PointMark(x: x, y: .value("Value", value))
+            .foregroundStyle(lineColor)
+            .symbolSize(data.count > 30 ? 0 : 4)
     }
     private func formattedValue(_ v: Double) -> String {
         if v == floor(v) { return String(format: "%.0f", v) }
@@ -213,6 +245,7 @@ struct GlassStepChart: View {
                 }
             }
             .chartYScale(domain: -0.1...1.1)
+            .chartYScale(range: .plotDimension(padding: 8))
             .chartPlotStyle { $0.background(.clear) }
             .frame(height: 150)
             .drawingGroup()

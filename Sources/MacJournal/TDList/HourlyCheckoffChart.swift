@@ -82,6 +82,7 @@ struct HourlyCheckoffChart: View {
                     .cornerRadius(2)
                 }
                 .chartXScale(domain: 0...23)
+                .chartYScale(range: .plotDimension(padding: 8))
                 .chartXAxis {
                     AxisMarks(values: .stride(by: 3)) { value in
                         AxisGridLine().foregroundStyle(themeManager.colors.chartGrid)

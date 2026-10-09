@@ -62,6 +62,7 @@ struct AppData: Codable {
     var trapAnalysis: TrapAnalysis?
 
     var dailyGoals: [DailyGoal]? // [TDList]
+    var dailyRecurringTasks: [LegacyDailyRecurringTask]? // [TDList] Decode-only legacy field
 
     init(entries: [Entry], config: AppConfig, journalEntries: [JournalEntry]? = nil, tdCheckoffEvents: [TDCheckoffEvent]? = nil, checklistItems: [ChecklistItem]? = nil, morningBriefing: MorningBriefing? = nil, goals: [Goal]? = nil, subscriptions: [Subscription]? = nil, trapShootingSets: [TrapShootingSet]? = nil, trapAnalysis: TrapAnalysis? = nil, dailyGoals: [DailyGoal]? = nil) { // [TDList]
         self.entries = entries
@@ -75,6 +76,7 @@ struct AppData: Codable {
         self.trapShootingSets = trapShootingSets
         self.trapAnalysis = trapAnalysis
         self.dailyGoals = dailyGoals // [TDList]
+        self.dailyRecurringTasks = nil // [TDList] Legacy field is never written.
     }
 
     init(from decoder: Decoder) throws {
@@ -96,5 +98,7 @@ struct AppData: Codable {
         trapAnalysis = (try? container.decodeIfPresent(TrapAnalysis.self, forKey: .trapAnalysis)) ?? nil
         // Silently drop corrupted daily goals — never let them sink the entire load
         dailyGoals = (try? container.decodeIfPresent([DailyGoal].self, forKey: .dailyGoals)) ?? nil // [TDList]
+        // Decode the old Daily list shape for migration to P4 by DataStore.load().
+        dailyRecurringTasks = (try? container.decodeIfPresent([LegacyDailyRecurringTask].self, forKey: .dailyRecurringTasks)) ?? nil // [TDList]
     }
 }

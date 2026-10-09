@@ -25,7 +25,7 @@ For AI coding agents (Claude Code, Cursor, Copilot, etc.) to install MacJournal 
 ```bash
 # 1. Download the DMG from the latest GitHub release
 curl -L -o /tmp/MacJournal.dmg \
-  https://github.com/maloocas/MacJournal/releases/download/v1.1.1/MacJournal.dmg
+  https://github.com/maloocas/MacJournal/releases/download/v1.2.0/MacJournal.dmg
 
 # 2. Mount the disk image
 hdiutil attach /tmp/MacJournal.dmg -nobrowse -mountpoint /tmp/MacJournal
@@ -49,18 +49,19 @@ Track recurring daily metrics through a structured entry system:
 
 - **Sleep tracking** — hours logged with configurable target ranges
 - **Diet logging** — per-meal categorization (Healthy, Fancy, Standard, Junk, Skipped)
-- **Task completion** — split into Professional and Personal & Academic categories
+- **Task completion** — combined total and completed item counts synced from the TD List
 - **Reading progress** — pages read per day with configurable targets
 - **Meditation tracking** — daily check-in toggle
 - **Social time** — minutes spent socializing (affects efficiency scoring)
-- **Auto-computed KPIs** — Tasks Done Index (TDI), Efficiency Score, Focus Ratio, Sleep Metric, Reading Score, and per-category execution rates
+- **Auto-computed KPIs** — Tasks Done Index (TDI), Efficiency Score, Focus Ratio, Sleep Metric, Reading Score, and total task execution
 
 ### 📋 TD List
 Daily task management with local checklists:
 
-- **Dual sections** — Professional and Personal & Academic, each with independent progress tracking
+- **Priority sections** — P0–P4 and Upcoming task lists
+- **Progress tracking** — overall and per-priority completion rings
+- **Automatic Daily Log sync** — total and completed counts sync from the TD List, excluding Upcoming
 - **Inline editing** — tap to toggle, pencil to edit, trash to delete
-- **Dual progress views** — progress rings and section progress bars
 - **Pop-out window** — compact floating TD List view
 
 ### 💳 Subscription Tracking
@@ -205,6 +206,13 @@ MIT — see [LICENSE](LICENSE) for details.
 ---
 
 ## Changelog
+
+### v1.2.0 — Priority-Based TD List & Unified Task Tracking
+
+- Reworked the TD List around P0–P4 priorities and Upcoming tasks, with drag-and-drop reprioritization and bulk check/uncheck actions.
+- Unified task totals and completions across the Daily Log, KPIs, Dashboard, charts, and AI briefings; Upcoming tasks are excluded from daily progress.
+- Migrated existing recurring tasks and preserved compatibility with previously saved entries.
+- Refined chart scaling and trap-shooting round trends, and streamlined dashboard and daily-task views.
 
 ### v1.1.1 — Performance Fixes
 - Performance optimizations across chart rendering, KPI computation, and data persistence

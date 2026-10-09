@@ -88,8 +88,8 @@ class MorningBriefingService: ObservableObject {
             let allClean = (entry.breakfast == .healthy || entry.breakfast == .standard) &&
                            (entry.lunch == .healthy || entry.lunch == .standard) &&
                            (entry.dinner == .healthy || entry.dinner == .standard)
-            let hasTasks = entry.proTotal + entry.perTotal > 0
-            let allTasksDone = hasTasks && entry.proDone == entry.proTotal && entry.perDone == entry.perTotal
+            let hasTasks = entry.totalItems > 0
+            let allTasksDone = hasTasks && entry.completedItems == entry.totalItems
 
             prompt += "\(df.string(from: entry.date)):\n"
             prompt += "  Sleep: \(String(format: "%.1f", entry.sleepHours))h — "
@@ -105,7 +105,7 @@ class MorningBriefingService: ObservableObject {
             if hadJunk { prompt += " — JUNK FOOD DAY ⚠️" }
             if allClean { prompt += " — clean day ✓" }
             prompt += "\n"
-            prompt += "  Tasks: pro \(entry.proDone)/\(entry.proTotal), per \(entry.perDone)/\(entry.perTotal)"
+            prompt += "  Tasks: \(entry.completedItems)/\(entry.totalItems)"
             if !hasTasks { prompt += " — NO TASKS SET ⚠️" }
             else if allTasksDone { prompt += " — all done ✓"}
             prompt += "\n"
@@ -128,10 +128,9 @@ class MorningBriefingService: ObservableObject {
             let sleepOkDays = recentEntries.filter { $0.sleepHours >= config.sleepMin && $0.sleepHours <= config.sleepMax }.count
             let readingHitDays = recentEntries.filter { $0.readingPages >= config.readingTarget }.count
             let junkDays = recentEntries.filter { $0.breakfast == .junk || $0.lunch == .junk || $0.dinner == .junk }.count
-            let zeroTaskDays = recentEntries.filter { $0.proTotal + $0.perTotal == 0 }.count
+            let zeroTaskDays = recentEntries.filter { $0.totalItems == 0 }.count
             let allDoneDays = recentEntries.filter {
-                let has = $0.proTotal + $0.perTotal > 0
-                return has && $0.proDone == $0.proTotal && $0.perDone == $0.perTotal
+                $0.totalItems > 0 && $0.completedItems == $0.totalItems
             }.count
 
             prompt += "7-DAY SUMMARY:\n"

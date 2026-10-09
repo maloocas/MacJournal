@@ -6,8 +6,6 @@ struct DashboardView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
 
-    @State private var dashboardDailyGoalText = "" // [TDList]
-
     @State private var weekEntries: [Entry] = []
     @State private var avgTDI: Double = 0
     @State private var avgEfficiency: Double = 0
@@ -112,18 +110,10 @@ struct DashboardView: View {
                         .padding(.top, 6)
 
                     CompactKpiCard(
-                        label: "Professional",
-                        value: "\(latest.proDone)",
-                        unit: "/\(latest.proTotal)",
-                        progress: latest.proTotal > 0 ? Double(latest.proDone) / Double(latest.proTotal) : 0,
-                        accent: themeManager.colors.accent
-                    )
-
-                    CompactKpiCard(
-                        label: "Personal",
-                        value: "\(latest.perDone)",
-                        unit: "/\(latest.perTotal)",
-                        progress: latest.perTotal > 0 ? Double(latest.perDone) / Double(latest.perTotal) : 0,
+                        label: "Tasks Completed",
+                        value: "\(latest.completedItems)",
+                        unit: "/\(latest.totalItems)",
+                        progress: latest.totalItems > 0 ? Double(latest.completedItems) / Double(latest.totalItems) : 0,
                         accent: themeManager.colors.accent
                     )
 
@@ -292,146 +282,35 @@ struct DashboardView: View {
                 .padding(.top, 12) // [TDList]
             }
 
-            dailyGoalsDashboardSection // [TDList]
-
-            if store.checklistItems.isEmpty { // [TDList]
-                emptyChecklistPlaceholder // [TDList]
-            } else { // [TDList]
-                checklistContent // [TDList]
-            }
-        }
-    }
-
-    private var emptyChecklistPlaceholder: some View { // [TDList]
-        SectionBox(title: "TD List") {
-            VStack(spacing: 12) {
-                Image(systemName: "checklist")
-                    .font(.system(size: 28))
-                    .foregroundColor(themeManager.colors.textMuted)
-                Text("No checklist items.\nAdd some in the TD List tab.")
-                    .font(.system(size: 12))
-                    .foregroundColor(themeManager.colors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 48)
+            checklistContent
         }
     }
 
     private var checklistContent: some View { // [TDList]
         ScrollView {
             VStack(spacing: 16) {
-                let proItems = store.checklistItems.filter { $0.section == .professional }
-                let perItems = store.checklistItems.filter { $0.section == .personal }
-
-                if !proItems.isEmpty {
-                    SectionBox(title: "Professional (\(proItems.count))") {
+                ForEach(ChecklistItem.Priority.allCases, id: \.self) { priority in
+                    let items = store.checklistItems.filter { $0.priority == priority }
+                    SectionBox(title: "\(priority.title) (\(items.count))") {
                         LazyVStack(spacing: 0) {
-                            ForEach(Array(proItems.enumerated()), id: \.element.id) { idx, item in
+                            ForEach(Array(items.enumerated()), id: \.element.id) { idx, item in
                                 ChecklistItemRow(
                                     item: item,
                                     onToggle: { toggleItem(item) },
                                     onDelete: { deleteItem(item) },
                                     onEdit: nil
                                 )
-                                if idx < proItems.count - 1 {
+                                if idx < items.count - 1 {
                                     Divider().overlay(themeManager.colors.borderFaint)
                                 }
                             }
                         }
                     }
-                }
-
-                if !perItems.isEmpty {
-                    SectionBox(title: "Personal & Academic (\(perItems.count))") {
-                        LazyVStack(spacing: 0) {
-                            ForEach(Array(perItems.enumerated()), id: \.element.id) { idx, item in
-                                ChecklistItemRow(
-                                    item: item,
-                                    onToggle: { toggleItem(item) },
-                                    onDelete: { deleteItem(item) },
-                                    onEdit: nil
-                                )
-                                if idx < perItems.count - 1 {
-                                    Divider().overlay(themeManager.colors.borderFaint)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var dailyGoalsDashboardSection: some View { // [TDList]
-        let todayGoals = store.todayDailyGoals
-        return SectionBox(title: "Daily Goals (\(todayGoals.count)/\(DailyGoal.maxPerDay))") {
-            VStack(spacing: 0) {
-                ForEach(Array(todayGoals.enumerated()), id: \.element.id) { idx, goal in
-                    DailyGoalRow(
-                        goal: goal,
-                        onToggle: { store.toggleDailyGoal(id: goal.id) },
-                        onDelete: { store.deleteDailyGoal(id: goal.id) },
-                        onEdit: nil
+                    .checklistPriorityDropTarget(
+                        priority,
+                        store: store,
+                        accentColor: themeManager.colors.accent
                     )
-                    if idx < todayGoals.count - 1 {
-                        Divider().overlay(themeManager.colors.borderFaint)
-                    }
-                }
-
-                if todayGoals.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "target")
-                            .font(.system(size: 28))
-                            .foregroundColor(themeManager.colors.textMuted)
-                        Text("No daily goals yet.\nAdd 1-5 goals for today.")
-                            .font(.system(size: 12))
-                            .foregroundColor(themeManager.colors.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 48)
-                }
-
-                if todayGoals.count < DailyGoal.maxPerDay {
-                    if !todayGoals.isEmpty {
-                        Divider().overlay(themeManager.colors.borderFaint)
-                    }
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle")
-                            .font(.system(size: 13))
-                            .foregroundColor(themeManager.colors.accent.opacity(0.6))
-
-                        TextField("Add daily goal...", text: $dashboardDailyGoalText)
-                            .textFieldStyle(.plain)
-                            .font(.system(size: 13))
-                            .foregroundColor(themeManager.colors.textPrimary)
-                            .onSubmit {
-                                let trimmed = dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
-                                guard !trimmed.isEmpty else { return }
-                                store.addDailyGoal(text: trimmed)
-                                dashboardDailyGoalText = ""
-                            }
-
-                        Button(action: {
-                            let trimmed = dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
-                            guard !trimmed.isEmpty else { return }
-                            store.addDailyGoal(text: trimmed)
-                            dashboardDailyGoalText = ""
-                        }) {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundColor(
-                                    dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                        ? themeManager.colors.textMuted
-                                        : themeManager.colors.accent
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(dashboardDailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 4)
                 }
             }
         }
@@ -457,23 +336,20 @@ struct DashboardView: View {
                 ChartBox(title: "Efficiency Radar") {
                     RadarChartView(
                         values: [
-                            CGFloat(min(kpis.proExec, 100)),
-                            CGFloat(min(kpis.perExec, 100)),
+                            CGFloat(min(kpis.taskExecution, 100)),
                             CGFloat(kpis.readingScore),
                             CGFloat(min(100, max(0, 100 - Double(latest.socialMins) * store.config.socialWeight * 2))),
                             CGFloat(min(kpis.sleepMetric, 100))
                         ],
-                        labels: ["Pro Exec", "Personal Exec", "Reading", "Focus", "Rest"]
+                        labels: ["Task Exec", "Reading", "Focus", "Rest"]
                     )
                     .padding()
                 }
 
                 ChartBox(title: "Task Completion") {
                     BarChartView(
-                        proDone: latest.proDone,
-                        proTotal: latest.proTotal,
-                        perDone: latest.perDone,
-                        perTotal: latest.perTotal
+                        completedItems: latest.completedItems,
+                        totalItems: latest.totalItems
                     )
                     .padding()
                 }

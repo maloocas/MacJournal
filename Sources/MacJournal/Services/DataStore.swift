@@ -57,7 +57,14 @@ class DataStore: ObservableObject {
         journalEntries = appData.journalEntries ?? []
         config = appData.config
         tdCheckoffEvents = appData.tdCheckoffEvents ?? [] // [TDList]
-        checklistItems = appData.checklistItems ?? []     // [TDList]
+        let legacyDailyTasks = appData.dailyRecurringTasks ?? []
+        var loadedChecklistItems = appData.checklistItems ?? []
+        var checklistItemIDs = Set(loadedChecklistItems.map(\.id))
+        let today = Date()
+        for task in legacyDailyTasks where checklistItemIDs.insert(task.id).inserted {
+            loadedChecklistItems.append(task.migratedChecklistItem(on: today))
+        }
+        checklistItems = loadedChecklistItems
         morningBriefing = appData.morningBriefing
         goals = appData.goals ?? []
         subscriptions = appData.subscriptions ?? []
@@ -69,6 +76,9 @@ class DataStore: ObservableObject {
         dailyGoals = appData.dailyGoals ?? [] // [TDList]
         recalculateAllKPIs()
         ThemeManager.shared.applyAccent(config.accentColor)
+        if !legacyDailyTasks.isEmpty {
+            save()
+        }
     }
 
     func save() {
@@ -324,7 +334,7 @@ class DataStore: ObservableObject {
     }
 
     func exportCSV(savePanel: Bool = true) -> URL? {
-        var csvString = "Date,Sleep Hours,Social Mins,Breakfast,Lunch,Dinner,Professional Tasks Total,Professional Tasks Done,Personal Tasks Total,Personal Tasks Done,Reading Pages,Meditated,TDI,Efficiency,Focus Ratio,Sleep Metric,Reading Score,Professional Exec,Personal Exec\n"
+        var csvString = "Date,Sleep Hours,Social Mins,Breakfast,Lunch,Dinner,Total Items,Completed Items,Reading Pages,Meditated,TDI,Efficiency,Focus Ratio,Sleep Metric,Reading Score,Task Execution\n"
         
         for entry in entries {
             // Escape values if needed, though most fields don't contain commas.
@@ -335,10 +345,8 @@ class DataStore: ObservableObject {
                 entry.breakfast.rawValue.replacingOccurrences(of: ",", with: " "),
                 entry.lunch.rawValue.replacingOccurrences(of: ",", with: " "),
                 entry.dinner.rawValue.replacingOccurrences(of: ",", with: " "),
-                String(entry.proTotal),
-                String(entry.proDone),
-                String(entry.perTotal),
-                String(entry.perDone),
+                String(entry.totalItems),
+                String(entry.completedItems),
                 String(entry.readingPages),
                 String(entry.meditated),
                 String(entry.kpis?.tdi ?? 0),
@@ -346,8 +354,7 @@ class DataStore: ObservableObject {
                 String(format: "%.2f", entry.kpis?.focusRatio ?? 0.0),
                 String(format: "%.2f", entry.kpis?.sleepMetric ?? 0.0),
                 String(entry.kpis?.readingScore ?? 0),
-                String(format: "%.2f", entry.kpis?.proExec ?? 0.0),
-                String(format: "%.2f", entry.kpis?.perExec ?? 0.0)
+                String(format: "%.2f", entry.kpis?.taskExecution ?? 0.0)
             ].joined(separator: ",")
             csvString.append(row + "\n")
         }
@@ -367,8 +374,8 @@ class DataStore: ObservableObject {
     }
 
     /// Imports entries from a legacy JSON export (web app format).
-    /// The web app stores entries as raw JSON with fields: id, date, sleepHours, socialMins,
-    /// diet (array of strings), proTotal, proDone, perTotal, perDone, readingPages, meditated.
+    /// diet (array of strings), plus legacy professional/personal task counts,
+    /// readingPages, and meditated.
     func importLegacyJSON(url: URL) throws -> Int {
         let rawData = try Data(contentsOf: url)
         guard let json = try JSONSerialization.jsonObject(with: rawData) as? [[String: Any]] else {
@@ -398,10 +405,8 @@ class DataStore: ObservableObject {
                 breakfast: DietCategory(rawValue: dietStrings.indices.contains(0) ? dietStrings[0] : "Quick/Standard") ?? .standard,
                 lunch: DietCategory(rawValue: dietStrings.indices.contains(1) ? dietStrings[1] : "Quick/Standard") ?? .standard,
                 dinner: DietCategory(rawValue: dietStrings.indices.contains(2) ? dietStrings[2] : "Quick/Standard") ?? .standard,
-                proTotal: raw["proTotal"] as? Int ?? 0,
-                proDone: raw["proDone"] as? Int ?? 0,
-                perTotal: raw["perTotal"] as? Int ?? 0,
-                perDone: raw["perDone"] as? Int ?? 0,
+                totalItems: (raw["proTotal"] as? Int ?? 0) + (raw["perTotal"] as? Int ?? 0),
+                completedItems: (raw["proDone"] as? Int ?? 0) + (raw["perDone"] as? Int ?? 0),
                 readingPages: raw["readingPages"] as? Int ?? 0,
                 meditated: raw["meditated"] as? Bool ?? false
             )

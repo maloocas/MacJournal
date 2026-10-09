@@ -5,10 +5,8 @@ import Charts
 
 struct BarChartView: View {
     @EnvironmentObject var themeManager: ThemeManager
-    let proDone: Int
-    let proTotal: Int
-    let perDone: Int
-    let perTotal: Int
+    let completedItems: Int
+    let totalItems: Int
 
     struct BarItem: Identifiable {
         let id = UUID()
@@ -19,10 +17,8 @@ struct BarChartView: View {
 
     var bars: [BarItem] {
         [
-            BarItem(category: "Pro", type: "Completed", value: proDone),
-            BarItem(category: "Pro", type: "Total", value: max(proTotal, proDone)),
-            BarItem(category: "Per/Acad", type: "Completed", value: perDone),
-            BarItem(category: "Per/Acad", type: "Total", value: max(perTotal, perDone)),
+            BarItem(category: "Tasks", type: "Completed", value: completedItems),
+            BarItem(category: "Tasks", type: "Total", value: max(totalItems, completedItems)),
         ]
     }
 
@@ -42,6 +38,5 @@ struct BarChartView: View {
         .chartLegend(position: .bottom, spacing: 8)
         .chartXAxis { AxisMarks { AxisValueLabel().foregroundStyle(themeManager.colors.textSecondary) } }
         .drawingGroup()
-
     }
 }

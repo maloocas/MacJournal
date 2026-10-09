@@ -6,8 +6,6 @@ struct PopOutTDListView: View {
     @ObservedObject private var store = DataStore.shared
     @ObservedObject private var themeManager = ThemeManager.shared
 
-    @State private var proText = ""
-    @State private var perText = ""
     @State private var dailyGoalText = ""
 
     var body: some View {
@@ -31,11 +29,7 @@ struct PopOutTDListView: View {
 
                 dailyGoalsSection
 
-                if store.checklistItems.isEmpty && store.todayDailyGoals.isEmpty {
-                    emptyPlaceholder
-                } else {
-                    checklistSections
-                }
+                checklistSections
             }
         }
         .background(themeManager.colors.background)
@@ -178,43 +172,21 @@ struct PopOutTDListView: View {
         .padding(.horizontal, 4)
     }
 
-    // MARK: - Empty
-
-    private var emptyPlaceholder: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checklist")
-                .font(.system(size: 22))
-                .foregroundColor(themeManager.colors.textMuted)
-            Text("No checklist items.\nAdd some in the TD List tab.")
-                .font(.system(size: 10))
-                .foregroundColor(themeManager.colors.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-    }
-
     // MARK: - Checklist Sections
 
     private var checklistSections: some View {
         VStack(spacing: 10) {
-            let proItems = store.checklistItems.filter { $0.section == .professional }
-            let perItems = store.checklistItems.filter { $0.section == .personal }
-
-            if !proItems.isEmpty {
-                sectionBlock(title: "Professional (\(proItems.count))", items: proItems)
-            }
-
-            if !perItems.isEmpty {
-                sectionBlock(title: "Personal & Academic (\(perItems.count))", items: perItems)
+            ForEach(ChecklistItem.Priority.allCases, id: \.self) { priority in
+                let items = store.checklistItems.filter { $0.priority == priority }
+                sectionBlock(priority: priority, items: items)
             }
         }
         .padding(.horizontal, 8)
     }
 
-    private func sectionBlock(title: String, items: [ChecklistItem]) -> some View {
+    private func sectionBlock(priority: ChecklistItem.Priority, items: [ChecklistItem]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title)
+            Text("\(priority.title) (\(items.count))")
                 .font(.system(size: 10, weight: .semibold))
                 .textCase(.uppercase)
                 .tracking(1.5)
@@ -234,12 +206,23 @@ struct PopOutTDListView: View {
         .background(themeManager.colors.surface)
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .checklistPriorityDropTarget(
+            priority,
+            store: store,
+            accentColor: themeManager.colors.accent
+        )
     }
 
     // MARK: - Row
 
     private func popoutRow(item: ChecklistItem) -> some View {
         HStack(spacing: 6) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 10))
+                .foregroundColor(themeManager.colors.textMuted)
+                .help("Drag to change priority")
+                .draggable(item.id.uuidString)
+
             Button(action: { store.toggleChecklistItem(item) }) {
                 HStack(spacing: 6) {
                     ZStack {

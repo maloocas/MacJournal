@@ -65,7 +65,7 @@ struct StatsView: View {
             ChartDataItem(id: "sleep", data: entries.map { TrendPoint(date: $0.date, value: $0.sleepHours) }, title: "Sleep Duration", subtitle: "Hours per night", lineColor: colors.sleep, yAxisDomain: nil, isStep: false),
             ChartDataItem(id: "social", data: entries.map { TrendPoint(date: $0.date, value: Double($0.socialMins)) }, title: "Social Media", subtitle: "Minutes per day", lineColor: colors.social, yAxisDomain: nil, isStep: false),
             ChartDataItem(id: "meditated", data: entries.map { TrendPoint(date: $0.date, value: $0.meditated ? 1 : 0) }, title: "Meditated", subtitle: "Previous night", lineColor: colors.meditation, yAxisDomain: nil, isStep: true),
-            ChartDataItem(id: "tasks", data: entries.map { TrendPoint(date: $0.date, value: Double($0.proDone + $0.perDone)) }, title: "Tasks Completed", subtitle: "Total done per day", lineColor: colors.tasks, yAxisDomain: nil, isStep: false),
+            ChartDataItem(id: "tasks", data: entries.map { TrendPoint(date: $0.date, value: Double($0.completedItems)) }, title: "Tasks Completed", subtitle: "Total done per day", lineColor: colors.tasks, yAxisDomain: nil, isStep: false),
         ]
 
         if store.config.tdCheckoffTracking { // [TDList]

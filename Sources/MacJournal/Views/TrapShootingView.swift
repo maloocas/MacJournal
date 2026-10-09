@@ -386,9 +386,10 @@ struct TrapShootingView: View {
         return GlassLineChart(
             data: data,
             title: "Score Trend",
-            subtitle: "Score per round over time",
+            subtitle: "Score per round",
             lineColor: themeManager.colors.accent,
-            yAxisDomain: 0...25
+            yAxisDomain: 15...25,
+            xByRound: true
         )
     }
 
@@ -452,7 +453,8 @@ struct TrapShootingView: View {
             title: "Rolling Average",
             subtitle: "\(window)-round trailing average",
             lineColor: Color.orange,
-            yAxisDomain: nil
+            yAxisDomain: 15...25,
+            xByRound: true
         )
     }
 
@@ -760,9 +762,10 @@ struct TrapShootingView: View {
 
     private func scoreColor(_ score: Int) -> Color {
         switch score {
-        case 22...25: return Color.green
-        case 18...21: return Color.yellow
-        case 12...17: return Color.orange
+        case 23...25: return Color.blue // top tier
+        case 20...22: return Color.green
+        case 16...19: return Color.yellow
+        case 10...15: return Color.orange
         default: return Color.red.opacity(0.8)
         }
     }

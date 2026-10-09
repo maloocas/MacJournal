@@ -14,10 +14,9 @@ struct DailyLogView: View {
     @State private var breakfast: DietCategory = .standard
     @State private var lunch: DietCategory = .standard
     @State private var dinner: DietCategory = .standard
-    @State private var proTotal: Int = 0
-    @State private var proDone: Int = 0
-    @State private var perTotal: Int = 0
-    @State private var perDone: Int = 0
+    @State private var totalItems: Int = 0
+    @State private var completedItems: Int = 0
+
     @State private var readingPages: Int = 0
     @State private var meditated: Bool = false
 
@@ -86,39 +85,29 @@ struct DailyLogView: View {
                         }
                     }
 
-                    // Professional Ops
-                    SectionBox(title: "Professional Operations") {
-                        HStack(spacing: 18) {
-                            FormField(label: "Total Items") {
-                                TextField("0", value: $proTotal, format: .number)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(themeManager.colors.textPrimary)
+                    SectionBox(title: "Tasks") {
+                        VStack(spacing: 10) {
+                            HStack(spacing: 18) {
+                                FormField(label: "Total Items") {
+                                    TextField("0", value: $totalItems, format: .number)
+                                        .textFieldStyle(.plain)
+                                        .foregroundColor(themeManager.colors.textPrimary)
+                                }
+                                FormField(label: "Completed") {
+                                    TextField("0", value: $completedItems, format: .number)
+                                        .textFieldStyle(.plain)
+                                        .foregroundColor(themeManager.colors.textPrimary)
+                                }
                             }
-                            FormField(label: "Completed") {
-                                TextField("0", value: $proDone, format: .number)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(.white)
-                            }
-                        }
-                    }
-
-                    // Personal & Academic
-                    SectionBox(title: "Personal & Academic") {
-                        HStack(spacing: 18) {
-                            FormField(label: "Total Items") {
-                                TextField("0", value: $perTotal, format: .number)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(themeManager.colors.textPrimary)
-                            }
-                            FormField(label: "Completed") {
-                                TextField("0", value: $perDone, format: .number)
-                                    .textFieldStyle(.plain)
-                                    .foregroundColor(.white)
-                            }
+                            Text("Synced from TD List; edit these counts if needed.")
+                                .font(.system(size: 10))
+                                .foregroundColor(themeManager.colors.textMuted)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
 
                     // Behavioral
+
                     SectionBox(title: "Behavioral Variables") {
                         HStack {
                             Toggle(isOn: $meditated) {
@@ -306,6 +295,11 @@ struct DailyLogView: View {
         .onChange(of: isVisible) { visible in
             if visible { loadEntryForDate() }
         }
+        .onChange(of: currentTDListCounts) { counts in
+            guard Calendar.current.isDateInToday(logDate) else { return }
+            totalItems = counts.totalItems
+            completedItems = counts.completedItems
+        }
         .alert(editingExisting ? "Entry Updated" : "Data Log Committed", isPresented: $showAlert) {
             Button("OK") { resetForm() }
         } message: {
@@ -313,7 +307,21 @@ struct DailyLogView: View {
         }
     }
 
-    // MARK: - Date helpers and checklist sync
+    private var currentTDListCounts: TDListCounts {
+        TDListCounts(items: store.checklistItems)
+    }
+
+    private func taskCounts(for date: Date) -> (total: Int, completed: Int) {
+        if let entry = store.entries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: date) }) {
+            return (entry.totalItems, entry.completedItems)
+        }
+        if Calendar.current.isDateInToday(date) {
+            return (currentTDListCounts.totalItems, currentTDListCounts.completedItems)
+        }
+        return (0, 0)
+    }
+
+    // MARK: - Date helpers
 
     private func formattedDate(_ date: Date) -> String {
         let f = DateFormatter()
@@ -321,27 +329,16 @@ struct DailyLogView: View {
         return f.string(from: date)
     }
 
-    private func syncChecklistCounts() { // [TDList]
-        let proItems = store.checklistItems.filter { $0.section == .professional } // [TDList]
-        let perItems = store.checklistItems.filter { $0.section == .personal } // [TDList]
-        proTotal = proItems.count // [TDList]
-        proDone = proItems.filter { $0.isChecked }.count // [TDList]
-        perTotal = perItems.count // [TDList]
-        perDone = perItems.filter { $0.isChecked }.count // [TDList]
-    }
-
     // MARK: - Load existing entry for the selected date
 
     private func loadEntryForDate() {
-        // Auto-sync checklist counts for today (TD List is source of truth) // [TDList]
-        if Calendar.current.isDate(logDate, inSameDayAs: Date()) { // [TDList]
-            syncChecklistCounts() // [TDList]
-        }
-
         if let existing = store.entries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: logDate) }) {
             loadEntryIntoForm(existing)
+        } else {
+            let counts = taskCounts(for: logDate)
+            totalItems = counts.total
+            completedItems = counts.completed
         }
-        // Load journal text for this date
         if let journal = store.journalEntry(for: logDate) {
             journalText = journal.text
         } else {
@@ -356,11 +353,9 @@ struct DailyLogView: View {
         breakfast = entry.breakfast
         lunch = entry.lunch
         dinner = entry.dinner
-        proTotal = entry.proTotal
-        proDone = entry.proDone
-        perTotal = entry.perTotal
-        perDone = entry.perDone
         readingPages = entry.readingPages
+        totalItems = entry.totalItems
+        completedItems = entry.completedItems
         meditated = entry.meditated
         editingExisting = true
         // Load journal text
@@ -381,10 +376,8 @@ struct DailyLogView: View {
             breakfast: breakfast,
             lunch: lunch,
             dinner: dinner,
-            proTotal: proTotal,
-            proDone: proDone,
-            perTotal: perTotal,
-            perDone: perDone,
+            totalItems: totalItems,
+            completedItems: completedItems,
             readingPages: readingPages,
             meditated: meditated
         )
@@ -411,10 +404,8 @@ struct DailyLogView: View {
         breakfast = .standard
         lunch = .standard
         dinner = .standard
-        proTotal = 0
-        proDone = 0
-        perTotal = 0
-        perDone = 0
+        totalItems = currentTDListCounts.totalItems
+        completedItems = currentTDListCounts.completedItems
         readingPages = 0
         meditated = false
         journalText = ""

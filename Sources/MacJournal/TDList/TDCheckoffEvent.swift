@@ -7,7 +7,7 @@ import Foundation
 struct TDCheckoffEvent: Identifiable, Codable, Equatable {
     let id: UUID
     let itemText: String
-    let section: String          // "Professional" or "Personal & Academic"
+    let section: String          // Priority section at event time
     let action: Action           // checked or unchecked
     let timestamp: Date
 

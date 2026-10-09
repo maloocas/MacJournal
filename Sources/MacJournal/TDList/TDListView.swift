@@ -6,9 +6,7 @@ struct TDListView: View {
     @EnvironmentObject var store: DataStore
     @EnvironmentObject var themeManager: ThemeManager
 
-    @State private var proNewText = ""
-    @State private var perNewText = ""
-    @State private var dailyGoalText = ""
+    @State private var newItemTexts: [ChecklistItem.Priority: String] = [:]
     @State private var showClearAllConfirm = false
 
     var body: some View {
@@ -16,11 +14,9 @@ struct TDListView: View {
             VStack(alignment: .leading, spacing: 24) {
                 SectionHeader(title: "TD List")
 
-                dailyGoalsCard
-
                 progressOverviewCard
 
-                Text("Tap to check, pencil to edit, trash to delete. Changes are saved locally and update today's KPI entry.")
+                Text("Tap to check, use the drag handle to change priority, or edit and delete tasks. Changes are saved locally.")
                     .font(.system(size: 12))
                     .foregroundColor(themeManager.colors.textSecondary)
                     .lineSpacing(4)
@@ -35,6 +31,22 @@ struct TDListView: View {
                             .font(.system(size: 11))
                             .foregroundColor(themeManager.colors.textMuted)
 
+                        Button(action: store.uncheckAllChecklistItems) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "xmark.circle")
+                                    .font(.system(size: 11))
+                                Text("Uncheck All")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
+                            .background(themeManager.colors.surface)
+                            .foregroundColor(themeManager.colors.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!store.checklistItems.contains(where: \.isChecked))
+                        .help("Uncheck all checked checklist items")
+
                         Button(action: { showClearAllConfirm = true }) {
                             HStack(spacing: 6) {
                                 Image(systemName: "trash")
@@ -48,79 +60,19 @@ struct TDListView: View {
                             .foregroundColor(themeManager.colors.textSecondary)
                         }
                         .buttonStyle(.plain)
-                        .help("Remove all checklist items")
+                        .help("Remove all checklist items except Daily and Upcoming")
                     }
                 }
-                .confirmationDialog("Clear all checklist items?", isPresented: $showClearAllConfirm, titleVisibility: .visible) {
+                .confirmationDialog("Clear all items except Daily and Upcoming?", isPresented: $showClearAllConfirm, titleVisibility: .visible) {
                     Button("Clear All", role: .destructive) {
-                        store.clearAllChecklistItems()
+                        store.clearChecklistItemsExceptDailyAndUpcoming()
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("This removes every item from both sections. This cannot be undone.")
+                    Text("This removes all checklist items except those in the Daily (P4) and Upcoming sections. This cannot be undone.")
                 }
 
-                if store.checklistItems.isEmpty {
-                    SectionBox(title: "TD List") {
-                        VStack(spacing: 12) {
-                            Image(systemName: "checklist")
-                                .font(.system(size: 32))
-                                .foregroundColor(themeManager.colors.textMuted)
-                            Text("No checklist items yet.\nAdd some below to get started.")
-                                .font(.system(size: 12))
-                                .foregroundColor(themeManager.colors.textSecondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 48)
-                    }
-                }
-
-                let proItems = store.checklistItems.filter { $0.section == .professional }
-                SectionBox(title: "Professional (\(proItems.count))") {
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(proItems.enumerated()), id: \.element.id) { _, item in
-                            ChecklistItemRow(
-                                item: item,
-                                onToggle: { toggleItem(item) },
-                                onDelete: { deleteItem(item) },
-                                onEdit: { newText in editItem(item, newText: newText) }
-                            )
-                            if proItems.last?.id != item.id {
-                                Divider()
-                                    .overlay(themeManager.colors.borderFaint)
-                            }
-                        }
-
-                        if !proItems.isEmpty {
-                            Divider().overlay(themeManager.colors.borderFaint)
-                        }
-                        addItemRow(section: .professional, text: $proNewText)
-                    }
-                }
-
-                let perItems = store.checklistItems.filter { $0.section == .personal }
-                SectionBox(title: "Personal & Academic (\(perItems.count))") {
-                    LazyVStack(spacing: 0) {
-                        ForEach(Array(perItems.enumerated()), id: \.element.id) { _, item in
-                            ChecklistItemRow(
-                                item: item,
-                                onToggle: { toggleItem(item) },
-                                onDelete: { deleteItem(item) },
-                                onEdit: { newText in editItem(item, newText: newText) }
-                            )
-                            if perItems.last?.id != item.id {
-                                Divider()
-                                    .overlay(themeManager.colors.borderFaint)
-                            }
-                        }
-
-                        if !perItems.isEmpty {
-                            Divider().overlay(themeManager.colors.borderFaint)
-                        }
-                        addItemRow(section: .personal, text: $perNewText)
-                    }
-                }
+                prioritySections
             }
             .padding(.vertical, 16)
             .padding(.horizontal)
@@ -129,117 +81,49 @@ struct TDListView: View {
 
     }
 
-    // MARK: - Daily Goals Card
+    // MARK: - Priority Sections
 
-    private var dailyGoalsCard: some View {
-        let todayGoals = store.todayDailyGoals
-        return SectionBox(title: "Daily Goals (\(todayGoals.count)/\(DailyGoal.maxPerDay))") {
-            VStack(spacing: 0) {
-                ForEach(Array(todayGoals.enumerated()), id: \.element.id) { idx, goal in
-                    DailyGoalRow(
-                        goal: goal,
-                        onToggle: { store.toggleDailyGoal(id: goal.id) },
-                        onDelete: { store.deleteDailyGoal(id: goal.id) },
-                        onEdit: { newText in store.updateDailyGoalText(id: goal.id, text: newText) }
-                    )
-                    if idx < todayGoals.count - 1 {
-                        Divider().overlay(themeManager.colors.borderFaint)
+    private var prioritySections: some View {
+        VStack(spacing: 16) {
+            ForEach(ChecklistItem.Priority.allCases, id: \.self) { priority in
+                let items = store.checklistItems.filter { $0.priority == priority }
+                SectionBox(title: "\(priority.title) (\(items.count))") {
+                    LazyVStack(spacing: 0) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { _, item in
+                            ChecklistItemRow(
+                                item: item,
+                                onToggle: { toggleItem(item) },
+                                onDelete: { deleteItem(item) },
+                                onEdit: { newText in editItem(item, newText: newText) }
+                            )
+                            if items.last?.id != item.id {
+                                Divider().overlay(themeManager.colors.borderFaint)
+                            }
+                        }
+
+                        if !items.isEmpty {
+                            Divider().overlay(themeManager.colors.borderFaint)
+                        }
+                        addItemRow(priority: priority, text: newItemText(for: priority))
                     }
                 }
-
-                if todayGoals.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "target")
-                            .font(.system(size: 32))
-                            .foregroundColor(themeManager.colors.textMuted)
-                        Text("No daily goals yet.\nAdd 1-5 goals for today.")
-                            .font(.system(size: 12))
-                            .foregroundColor(themeManager.colors.textSecondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 48)
-                }
-
-                if todayGoals.count < DailyGoal.maxPerDay {
-                    if !todayGoals.isEmpty {
-                        Divider().overlay(themeManager.colors.borderFaint)
-                    }
-                    addDailyGoalRow
-                }
+                .checklistPriorityDropTarget(
+                    priority,
+                    store: store,
+                    accentColor: themeManager.colors.accent
+                )
             }
         }
     }
 
-    private var addDailyGoalRow: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "plus.circle")
-                .font(.system(size: 13))
-                .foregroundColor(themeManager.colors.accent.opacity(0.6))
 
-            TextField("Add daily goal...", text: $dailyGoalText)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-                .foregroundColor(themeManager.colors.textPrimary)
-                .onSubmit {
-                    let trimmed = dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !trimmed.isEmpty else { return }
-                    store.addDailyGoal(text: trimmed)
-                    dailyGoalText = ""
-                }
-
-            Button(action: {
-                let trimmed = dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return }
-                store.addDailyGoal(text: trimmed)
-                dailyGoalText = ""
-            }) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(
-                        dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            ? themeManager.colors.textMuted
-                            : themeManager.colors.accent
-                    )
-            }
-            .buttonStyle(.plain)
-            .disabled(dailyGoalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-        }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 4)
-    }
-
-    // MARK: - Progress Overview Card
+    // MARK: - Priority Progress Overview
 
     private var progressOverviewCard: some View {
-        let proDone = store.checklistItems.filter { $0.section == .professional && $0.isChecked }.count
-        let proTotal = store.checklistItems.filter { $0.section == .professional }.count
-        let perDone = store.checklistItems.filter { $0.section == .personal && $0.isChecked }.count
-        let perTotal = store.checklistItems.filter { $0.section == .personal }.count
-
-        return HStack(spacing: 18) {
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(proTotal > 0 ? Double(proDone) / Double(proTotal) : 0))
-                        .stroke(themeManager.colors.accent, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(proDone)/\(proTotal)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Professional")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
+        HStack(spacing: 12) {
+            let counts = TDListCounts(items: store.checklistItems)
+            let totalItems = counts.totalItems
+            let completedItems = counts.completedItems
 
             VStack(spacing: 6) {
                 ZStack {
@@ -248,38 +132,13 @@ struct TDListView: View {
                         .frame(width: 44, height: 44)
 
                     Circle()
-                        .trim(from: 0, to: CGFloat(perTotal > 0 ? Double(perDone) / Double(perTotal) : 0))
+                        .trim(from: 0, to: CGFloat(totalItems > 0 ? Double(completedItems) / Double(totalItems) : 0))
                         .stroke(themeManager.colors.accent, lineWidth: 4)
                         .frame(width: 44, height: 44)
                         .rotationEffect(.degrees(-90))
 
-                    Text("\(perDone)/\(perTotal)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(themeManager.colors.textPrimary)
-                }
-                Text("Personal")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(themeManager.colors.textMuted)
-                    .textCase(.uppercase)
-                    .tracking(1)
-            }
-
-            let totalDone = proDone + perDone
-            let totalAll = proTotal + perTotal
-            VStack(spacing: 6) {
-                ZStack {
-                    Circle()
-                        .stroke(themeManager.colors.borderFaint, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-
-                    Circle()
-                        .trim(from: 0, to: CGFloat(totalAll > 0 ? Double(totalDone) / Double(totalAll) : 0))
-                        .stroke(themeManager.colors.accent, lineWidth: 4)
-                        .frame(width: 44, height: 44)
-                        .rotationEffect(.degrees(-90))
-
-                    Text("\(totalDone)/\(totalAll)")
-                        .font(.system(size: 11, weight: .bold))
+                    Text("\(completedItems)/\(totalItems)")
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(themeManager.colors.textPrimary)
                 }
                 Text("Total")
@@ -288,41 +147,74 @@ struct TDListView: View {
                     .textCase(.uppercase)
                     .tracking(1)
             }
+            .frame(maxWidth: .infinity)
+
+            ForEach(ChecklistItem.Priority.progressCases, id: \.self) { priority in
+                let items = store.checklistItems.filter { $0.priority == priority }
+                let done = items.filter(\.isChecked).count
+                let total = items.count
+
+                VStack(spacing: 6) {
+                    ZStack {
+                        Circle()
+                            .stroke(themeManager.colors.borderFaint, lineWidth: 4)
+                            .frame(width: 44, height: 44)
+
+                        Circle()
+                            .trim(from: 0, to: CGFloat(total > 0 ? Double(done) / Double(total) : 0))
+                            .stroke(themeManager.colors.accent, lineWidth: 4)
+                            .frame(width: 44, height: 44)
+                            .rotationEffect(.degrees(-90))
+
+                        Text("\(done)/\(total)")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(themeManager.colors.textPrimary)
+                    }
+                    Text(priority.title)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundColor(themeManager.colors.textMuted)
+                        .textCase(.uppercase)
+                        .tracking(1)
+                }
+                .frame(maxWidth: .infinity)
+            }
         }
         .padding(18)
         .frame(maxWidth: .infinity)
-.background(themeManager.colors.surface)
+        .background(themeManager.colors.surface)
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(themeManager.colors.border, lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .padding(.horizontal)
     }
 
-    // MARK: - Add Item Row
+    private func newItemText(for priority: ChecklistItem.Priority) -> Binding<String> {
+        Binding(
+            get: { newItemTexts[priority] ?? "" },
+            set: { newItemTexts[priority] = $0 }
+        )
+    }
 
-    private func addItemRow(section: ChecklistItem.Section, text: Binding<String>) -> some View {
+    private func addItemRow(priority: ChecklistItem.Priority, text: Binding<String>) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "plus.circle")
                 .font(.system(size: 13))
                 .foregroundColor(themeManager.colors.accent.opacity(0.6))
 
-            TextField(
-                section == .professional ? "Add professional task..." : "Add personal task...",
-                text: text
-            )
-            .textFieldStyle(.plain)
-            .font(.system(size: 13))
-            .foregroundColor(themeManager.colors.textPrimary)
-            .onSubmit {
-                let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return }
-                store.addChecklistItem(section: section, text: trimmed)
-                text.wrappedValue = ""
-            }
+            TextField("Add task to \(priority.title)...", text: text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundColor(themeManager.colors.textPrimary)
+                .onSubmit {
+                    let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    store.addChecklistItem(priority: priority, text: trimmed)
+                    text.wrappedValue = ""
+                }
 
             Button(action: {
                 let trimmed = text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !trimmed.isEmpty else { return }
-                store.addChecklistItem(section: section, text: trimmed)
+                store.addChecklistItem(priority: priority, text: trimmed)
                 text.wrappedValue = ""
             }) {
                 Image(systemName: "arrow.up.circle.fill")
@@ -339,6 +231,7 @@ struct TDListView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 4)
     }
+
 
     // MARK: - Pop-Out Button
 
@@ -393,6 +286,12 @@ struct ChecklistItemRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 11))
+                .foregroundColor(themeManager.colors.textMuted)
+                .help("Drag to change priority")
+                .draggable(item.id.uuidString)
+
             Button(action: onToggle) {
                 HStack(spacing: 12) {
                     ZStack {
@@ -483,6 +382,38 @@ struct ChecklistItemRow: View {
         }
         isEditing = false
         onEdit?(trimmed)
+    }
+}
+
+
+private struct ChecklistPriorityDropTarget: ViewModifier {
+    let priority: ChecklistItem.Priority
+    let store: DataStore
+    let accentColor: Color
+
+    @State private var isTargeted = false
+
+    func body(content: Content) -> some View {
+        content
+            .dropDestination(for: String.self) { identifiers, _ in
+                guard let id = identifiers.compactMap({ UUID(uuidString: $0) }).first else { return false }
+                return store.moveChecklistItem(id: id, to: priority)
+            } isTargeted: { isTargeted = $0 }
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(isTargeted ? accentColor : .clear, lineWidth: isTargeted ? 2 : 0)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
+extension View {
+    func checklistPriorityDropTarget(
+        _ priority: ChecklistItem.Priority,
+        store: DataStore,
+        accentColor: Color
+    ) -> some View {
+        modifier(ChecklistPriorityDropTarget(priority: priority, store: store, accentColor: accentColor))
     }
 }
 

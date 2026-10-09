@@ -24,28 +24,63 @@ extension DataStore {
 
     // MARK: - Checklist Items (Local)
 
+    @discardableResult
+    func synchronizeTodayTaskCounts() -> Bool {
+        let counts = TDListCounts(items: checklistItems)
+        guard let index = entries.firstIndex(where: { Calendar.current.isDateInToday($0.date) }) else {
+            return false
+        }
+        guard entries[index].totalItems != counts.totalItems
+                || entries[index].completedItems != counts.completedItems else {
+            return false
+        }
+        entries[index].totalItems = counts.totalItems
+        entries[index].completedItems = counts.completedItems
+        return true
+    }
+
     func toggleChecklistItem(_ item: ChecklistItem) {
         guard let index = checklistItems.firstIndex(where: { $0.id == item.id }) else { return }
         checklistItems[index].isChecked.toggle()
-        updateTodayFromChecklist()
+        if checklistItems[index].priority != .upcoming {
+            synchronizeTodayTaskCounts()
+        }
         let newChecked = checklistItems[index].isChecked
         let action: TDCheckoffEvent.Action = newChecked ? .checked : .unchecked
-        recordCheckoffEvent(itemText: item.text, section: item.section.rawValue, action: action)
+        recordCheckoffEvent(itemText: item.text, section: checklistItems[index].priority.rawValue, action: action)
         save()
     }
 
-    func addChecklistItem(section: ChecklistItem.Section, text: String) {
+    func addChecklistItem(priority: ChecklistItem.Priority, text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let newItem = ChecklistItem(section: section, text: trimmed, isChecked: false)
-        checklistItems.append(newItem)
-        updateTodayFromChecklist()
+        checklistItems.append(ChecklistItem(priority: priority, text: trimmed))
+        if priority != .upcoming {
+            synchronizeTodayTaskCounts()
+        }
         save()
+    }
+
+    @discardableResult
+    func moveChecklistItem(id: UUID, to priority: ChecklistItem.Priority) -> Bool {
+        guard let index = checklistItems.firstIndex(where: { $0.id == id }) else { return false }
+        let oldPriority = checklistItems[index].priority
+        guard oldPriority != priority else { return true }
+        checklistItems[index].priority = priority
+        if (oldPriority == .upcoming) != (priority == .upcoming) {
+            synchronizeTodayTaskCounts()
+        }
+        save()
+        return true
     }
 
     func deleteChecklistItem(_ item: ChecklistItem) {
-        checklistItems.removeAll { $0.id == item.id }
-        updateTodayFromChecklist()
+        guard let index = checklistItems.firstIndex(where: { $0.id == item.id }) else { return }
+        let wasTracked = checklistItems[index].priority != .upcoming
+        checklistItems.remove(at: index)
+        if wasTracked {
+            synchronizeTodayTaskCounts()
+        }
         save()
     }
 
@@ -57,45 +92,37 @@ extension DataStore {
         save()
     }
 
-    /// Removes every checklist item. Today's entry stays in sync (counts drop to zero).
-    func clearAllChecklistItems() {
-        checklistItems.removeAll()
-        updateTodayFromChecklist()
+    func clearChecklistItemsExceptDailyAndUpcoming() {
+        let removedTrackedItems = checklistItems.contains { $0.priority != .p4 && $0.priority != .upcoming }
+        checklistItems.removeAll { $0.priority != .p4 && $0.priority != .upcoming }
+        if removedTrackedItems {
+            synchronizeTodayTaskCounts()
+        }
         save()
     }
 
-    private func updateTodayFromChecklist() {
-        let proItems = checklistItems.filter { $0.section == .professional }
-        let perItems = checklistItems.filter { $0.section == .personal }
-        let proDone = proItems.filter { $0.isChecked }.count
-        let proTotal = proItems.count
-        let perDone = perItems.filter { $0.isChecked }.count
-        let perTotal = perItems.count
+    func uncheckAllChecklistItems() {
+        let checkedItemIndices = checklistItems.indices.filter { checklistItems[$0].isChecked }
+        guard !checkedItemIndices.isEmpty else { return }
 
-        let today = Date()
-        if var existing = entries.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
-            existing.proTotal = proTotal
-            existing.proDone = proDone
-            existing.perTotal = perTotal
-            existing.perDone = perDone
-            addOrUpdate(entry: &existing)
-        } else if !checklistItems.isEmpty {
-            var newEntry = Entry(
-                date: today,
-                sleepHours: 7.0,
-                socialMins: 0,
-                breakfast: .standard,
-                lunch: .standard,
-                dinner: .standard,
-                proTotal: proTotal,
-                proDone: proDone,
-                perTotal: perTotal,
-                perDone: perDone,
-                readingPages: 0,
-                meditated: false
-            )
-            addOrUpdate(entry: &newEntry)
+        let hasTrackedCheckedItems = checkedItemIndices.contains { checklistItems[$0].priority != .upcoming }
+        let timestamp = Date()
+        for index in checkedItemIndices {
+            let item = checklistItems[index]
+            checklistItems[index].isChecked = false
+            if config.tdCheckoffTracking {
+                tdCheckoffEvents.append(TDCheckoffEvent(
+                    itemText: item.text,
+                    section: item.priority.rawValue,
+                    action: .unchecked,
+                    timestamp: timestamp
+                ))
+            }
         }
+        if hasTrackedCheckedItems {
+            synchronizeTodayTaskCounts()
+        }
+        save()
     }
 
     // MARK: - Daily Goals (embedded in TD List views)
@@ -133,4 +160,5 @@ extension DataStore {
         dailyGoals[index].text = trimmed
         save()
     }
+
 }
